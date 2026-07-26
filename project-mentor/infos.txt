@@ -1,0 +1,22 @@
+I am adding the Milestone 1 details split up into tasks you can work on.
+
+Goal for this milestone is to build the foundation, nothing related to intelligence yet.
+
+TASKS:
+TASK 1 -  Study Agentic AI workflows
+You should learn and try to understand
+- What is an AI agent?
+- What is a multi agent system? 
+- How do agents communicate?
+- How prompts are passed from one agent to another, etc?
+
+TASK 2 - Design architecture
+You should be able to design some diagrams. Main outcomes would be - Architecture diagrams, ER diagrams, Flowcharts, and Database designs 
+
+TASK 3 - Student Onboarding
+You should build a student onboarding UI so students can register, login, profile page for users, and skill assessment for students, maybe with a small questionnaire stating their fluency in their tech stack.The deliverables for this are - A working profile page and a database that stores this student information
+
+TASK 4 - Project idea submission
+Working student idea submission page, with a basic API connected and data stored in the database based on how you decide your database designs. 
+
+So, all these tasks comprise Milestone 1 and their end deliverables are - Learning, login, student profile, skill assessment, project submission and architecture diagrams.

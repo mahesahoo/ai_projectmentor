@@ -1,0 +1,98 @@
+<svg width="800" height="500" viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg" font-family="Arial, Helvetica, sans-serif">
+  <title>Milestone 1 Relational Database Design</title>
+  <rect x="0" y="0" width="800" height="500" fill="#FFFFFF"/>
+  
+  <!-- Definitions for relationship markers (crow foot / connector) -->
+  <defs>
+    <marker id="one-to-many" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <circle cx="5" cy="5" r="2" fill="#5F5E5A"/>
+    </marker>
+  </defs>
+
+  <!-- Title -->
+  <text x="400" y="40" text-anchor="middle" font-size="18" font-weight="bold" fill="#17152B">Relational Database Schema Design</text>
+  <text x="400" y="60" text-anchor="middle" font-size="12" fill="#6F6C85">Milestone 1 Entity Schema &amp; Data Types</text>
+
+  <!-- Table 1: students -->
+  <rect x="50" y="100" width="220" height="230" rx="6" fill="#F8F7FA" stroke="#5B4FE0" stroke-width="2"/>
+  <rect x="50" y="100" width="220" height="35" rx="6" fill="#5B4FE0"/>
+  <text x="160" y="122" text-anchor="middle" font-size="14" font-weight="bold" fill="#FFFFFF">students</text>
+  
+  <text x="60" y="160" font-size="11" font-weight="bold" fill="#17152B">student_id [PK]</text>
+  <text x="260" y="160" text-anchor="end" font-size="11" fill="#6F6C85">VARCHAR</text>
+  
+  <text x="60" y="180" font-size="11" fill="#17152B">name</text>
+  <text x="260" y="180" text-anchor="end" font-size="11" fill="#6F6C85">VARCHAR</text>
+  
+  <text x="60" y="200" font-size="11" font-weight="bold" fill="#17152B">email [UK]</text>
+  <text x="260" y="200" text-anchor="end" font-size="11" fill="#6F6C85">VARCHAR</text>
+  
+  <text x="60" y="220" font-size="11" fill="#17152B">password_hash</text>
+  <text x="260" y="220" text-anchor="end" font-size="11" fill="#6F6C85">VARCHAR</text>
+  
+  <text x="60" y="240" font-size="11" fill="#17152B">branch</text>
+  <text x="260" y="240" text-anchor="end" font-size="11" fill="#6F6C85">VARCHAR(NULL)</text>
+  
+  <text x="60" y="260" font-size="11" fill="#17152B">year</text>
+  <text x="260" y="260" text-anchor="end" font-size="11" fill="#6F6C85">INTEGER(NULL)</text>
+  
+  <text x="60" y="280" font-size="11" fill="#17152B">created_at</text>
+  <text x="260" y="280" text-anchor="end" font-size="11" fill="#6F6C85">TIMESTAMP</text>
+
+  <!-- Table 2: skill_assessments -->
+  <rect x="520" y="80" width="230" height="170" rx="6" fill="#F8F7FA" stroke="#2C2947" stroke-width="1.5"/>
+  <rect x="520" y="80" width="230" height="35" rx="6" fill="#2C2947"/>
+  <text x="635" y="102" text-anchor="middle" font-size="14" font-weight="bold" fill="#FFFFFF">skill_assessments</text>
+  
+  <text x="530" y="140" font-size="11" font-weight="bold" fill="#17152B">assessment_id [PK]</text>
+  <text x="740" y="140" text-anchor="end" font-size="11" fill="#6F6C85">VARCHAR</text>
+  
+  <text x="530" y="160" font-size="11" font-weight="bold" fill="#5B4FE0">student_id [FK]</text>
+  <text x="740" y="160" text-anchor="end" font-size="11" fill="#6F6C85">VARCHAR</text>
+  
+  <text x="530" y="180" font-size="11" fill="#17152B">tech_stack</text>
+  <text x="740" y="180" text-anchor="end" font-size="11" fill="#6F6C85">VARCHAR</text>
+  
+  <text x="530" y="200" font-size="11" fill="#17152B">proficiency_level</text>
+  <text x="740" y="200" text-anchor="end" font-size="11" fill="#6F6C85">VARCHAR</text>
+  
+  <text x="530" y="220" font-size="11" fill="#17152B">submitted_at</text>
+  <text x="740" y="220" text-anchor="end" font-size="11" fill="#6F6C85">TIMESTAMP</text>
+
+  <!-- Table 3: project_ideas -->
+  <rect x="520" y="280" width="230" height="190" rx="6" fill="#F8F7FA" stroke="#2C2947" stroke-width="1.5"/>
+  <rect x="520" y="280" width="230" height="35" rx="6" fill="#2C2947"/>
+  <text x="635" y="302" text-anchor="middle" font-size="14" font-weight="bold" fill="#FFFFFF">project_ideas</text>
+  
+  <text x="530" y="340" font-size="11" font-weight="bold" fill="#17152B">idea_id [PK]</text>
+  <text x="740" y="340" text-anchor="end" font-size="11" fill="#6F6C85">VARCHAR</text>
+  
+  <text x="530" y="360" font-size="11" font-weight="bold" fill="#5B4FE0">student_id [FK]</text>
+  <text x="740" y="360" text-anchor="end" font-size="11" fill="#6F6C85">VARCHAR</text>
+  
+  <text x="530" y="380" font-size="11" fill="#17152B">title</text>
+  <text x="740" y="380" text-anchor="end" font-size="11" fill="#6F6C85">VARCHAR</text>
+  
+  <text x="530" y="400" font-size="11" fill="#17152B">description</text>
+  <text x="740" y="400" text-anchor="end" font-size="11" fill="#6F6C85">TEXT</text>
+  
+  <text x="530" y="420" font-size="11" fill="#17152B">status</text>
+  <text x="740" y="420" text-anchor="end" font-size="11" fill="#6F6C85">VARCHAR</text>
+  
+  <text x="530" y="440" font-size="11" fill="#17152B">submitted_at</text>
+  <text x="740" y="440" text-anchor="end" font-size="11" fill="#6F6C85">TIMESTAMP</text>
+
+  <!-- Relationship Lines -->
+  <!-- Line from students to skill_assessments -->
+  <path d="M 270 160 L 395 160 L 395 165 L 520 165" fill="none" stroke="#5F5E5A" stroke-width="1.5" marker-start="url(#one-to-many)"/>
+  
+  <!-- Line from students to project_ideas -->
+  <path d="M 270 240 L 395 240 L 395 365 L 520 365" fill="none" stroke="#5F5E5A" stroke-width="1.5" marker-start="url(#one-to-many)"/>
+  
+  <!-- Relationship Labels -->
+  <text x="290" y="150" font-size="10" fill="#6F6C85">1</text>
+  <text x="500" y="155" font-size="10" fill="#6F6C85">0..*</text>
+  
+  <text x="290" y="230" font-size="10" fill="#6F6C85">1</text>
+  <text x="500" y="355" font-size="10" fill="#6F6C85">0..*</text>
+</svg>

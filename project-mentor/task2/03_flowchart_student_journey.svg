@@ -1,0 +1,66 @@
+<svg width="680" height="1014" viewBox="0 0 680 1014" xmlns="http://www.w3.org/2000/svg" font-family="Arial, Helvetica, sans-serif">
+<title>Student journey flowchart</title>
+<desc>Student registers or logs in, completes their profile and skill assessment, then submits a project idea which is validated and stored, ending in onboarding complete.</desc>
+<rect x="0" y="0" width="680" height="1014" fill="#FFFFFF"/>
+<defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+<path d="M2 1L8 5L2 9" fill="none" stroke="#5F5E5A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</marker>
+</defs>
+
+<line x1="340" y1="96" x2="340" y2="130" stroke="#5F5E5A" stroke-width="1.5" marker-end="url(#arrow)"/>
+<path d="M230 170 L160 170 L160 250" fill="none" stroke="#5F5E5A" stroke-width="1.5" marker-end="url(#arrow)"/>
+<path d="M450 170 L520 170 L520 250" fill="none" stroke="#5F5E5A" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="185" y="163" font-size="12" fill="#444441">No</text>
+<text x="470" y="163" font-size="12" fill="#444441">Yes</text>
+<line x1="160" y1="306" x2="160" y2="346" stroke="#5F5E5A" stroke-width="1.5" marker-end="url(#arrow)"/>
+<line x1="520" y1="306" x2="520" y2="346" stroke="#5F5E5A" stroke-width="1.5" marker-end="url(#arrow)"/>
+<path d="M160 402 L160 470 L210 470" fill="none" stroke="#5F5E5A" stroke-width="1.5" marker-end="url(#arrow)"/>
+<path d="M520 402 L520 470 L470 470" fill="none" stroke="#5F5E5A" stroke-width="1.5" marker-end="url(#arrow)"/>
+<line x1="340" y1="526" x2="340" y2="586" stroke="#5F5E5A" stroke-width="1.5" marker-end="url(#arrow)"/>
+<line x1="340" y1="642" x2="340" y2="702" stroke="#5F5E5A" stroke-width="1.5" marker-end="url(#arrow)"/>
+<line x1="340" y1="758" x2="340" y2="818" stroke="#5F5E5A" stroke-width="1.5" marker-end="url(#arrow)"/>
+<line x1="340" y1="874" x2="340" y2="934" stroke="#5F5E5A" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+<rect x="210" y="40" width="260" height="56" rx="8" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="1"/>
+<text x="340" y="62" text-anchor="middle" font-size="14" font-weight="bold" fill="#2C2C2A">Visit auth page</text>
+<text x="340" y="82" text-anchor="middle" font-size="12" fill="#444441">Login/register entry point</text>
+
+<polygon points="340,130 450,170 340,210 230,170" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="1"/>
+<text x="340" y="174" text-anchor="middle" font-size="12" fill="#2C2C2A">Existing account?</text>
+
+<rect x="60" y="250" width="200" height="56" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="1"/>
+<text x="160" y="272" text-anchor="middle" font-size="14" font-weight="bold" fill="#26215C">Register form</text>
+<text x="160" y="292" text-anchor="middle" font-size="12" fill="#3C3489">New student signup</text>
+
+<rect x="420" y="250" width="200" height="56" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="1"/>
+<text x="520" y="272" text-anchor="middle" font-size="14" font-weight="bold" fill="#26215C">Login form</text>
+<text x="520" y="292" text-anchor="middle" font-size="12" fill="#3C3489">Existing student</text>
+
+<rect x="60" y="346" width="200" height="56" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="1"/>
+<text x="160" y="368" text-anchor="middle" font-size="14" font-weight="bold" fill="#26215C">Create student record</text>
+<text x="160" y="388" text-anchor="middle" font-size="12" fill="#3C3489">Insert into Student table</text>
+
+<rect x="420" y="346" width="200" height="56" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="1"/>
+<text x="520" y="368" text-anchor="middle" font-size="14" font-weight="bold" fill="#26215C">Validate credentials</text>
+<text x="520" y="388" text-anchor="middle" font-size="12" fill="#3C3489">Check password hash</text>
+
+<rect x="210" y="470" width="260" height="56" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="1"/>
+<text x="340" y="492" text-anchor="middle" font-size="14" font-weight="bold" fill="#26215C">Complete profile</text>
+<text x="340" y="512" text-anchor="middle" font-size="12" fill="#3C3489">Saved to Student table</text>
+
+<rect x="210" y="586" width="260" height="56" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="1"/>
+<text x="340" y="608" text-anchor="middle" font-size="14" font-weight="bold" fill="#26215C">Complete skill assessment</text>
+<text x="340" y="628" text-anchor="middle" font-size="12" fill="#3C3489">Saved to Skill Assessment table</text>
+
+<rect x="210" y="702" width="260" height="56" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="1"/>
+<text x="340" y="724" text-anchor="middle" font-size="14" font-weight="bold" fill="#26215C">Submit project idea</text>
+<text x="340" y="744" text-anchor="middle" font-size="12" fill="#3C3489">Title + short description</text>
+
+<rect x="210" y="818" width="260" height="56" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="1"/>
+<text x="340" y="840" text-anchor="middle" font-size="14" font-weight="bold" fill="#26215C">Validate &amp; store idea</text>
+<text x="340" y="860" text-anchor="middle" font-size="12" fill="#3C3489">Project Idea table, status set</text>
+
+<rect x="210" y="934" width="260" height="40" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="1"/>
+<text x="340" y="958" text-anchor="middle" font-size="14" font-weight="bold" fill="#04342C">Onboarding complete</text>
+</svg>

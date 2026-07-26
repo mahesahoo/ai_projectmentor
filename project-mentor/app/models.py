@@ -1,0 +1,132 @@
+import uuid
+from datetime import datetime
+
+from sqlalchemy import Column, String, Integer, ForeignKey, DateTime, JSON
+from sqlalchemy.orm import relationship
+
+from app.database import Base
+
+
+def gen_uuid() -> str:
+    return str(uuid.uuid4())
+
+
+class Student(Base):
+    """Matches the STUDENT entity in the Task 2 ER diagram."""
+    __tablename__ = "students"
+
+    student_id = Column(String, primary_key=True, default=gen_uuid)
+    name = Column(String, nullable=False)
+    email = Column(String, unique=True, nullable=False, index=True)
+    password_hash = Column(String, nullable=False)
+    branch = Column(String, nullable=True)
+    year = Column(Integer, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    skill_assessments = relationship(
+        "SkillAssessment", back_populates="student", cascade="all, delete-orphan"
+    )
+    project_ideas = relationship(
+        "ProjectIdea", back_populates="student", cascade="all, delete-orphan"
+    )
+
+
+class SkillAssessment(Base):
+    """Matches the SKILL_ASSESSMENT entity in the Task 2 ER diagram."""
+    __tablename__ = "skill_assessments"
+
+    assessment_id = Column(String, primary_key=True, default=gen_uuid)
+    student_id = Column(String, ForeignKey("students.student_id"), nullable=False)
+    tech_stack = Column(String, nullable=False)
+    proficiency_level = Column(String, nullable=False)
+    submitted_at = Column(DateTime, default=datetime.utcnow)
+
+    student = relationship("Student", back_populates="skill_assessments")
+
+
+class ProjectIdea(Base):
+    """Matches the PROJECT_IDEA entity in the Task 2 ER diagram.
+
+    The `status` field defaults to "submitted" and is driven through the
+    Milestone 2 pipeline stages defined in app/agents/status.py:
+    submitted -> analyzing_feasibility -> analyzing_scope -> analyzing_tech
+    -> analyzing_timeline -> analyzed (or failed at any stage).
+    """
+    __tablename__ = "project_ideas"
+
+    idea_id = Column(String, primary_key=True, default=gen_uuid)
+    student_id = Column(String, ForeignKey("students.student_id"), nullable=False)
+    title = Column(String, nullable=False)
+    description = Column(String, nullable=False)
+    status = Column(String, nullable=False, default="submitted")
+    submitted_at = Column(DateTime, default=datetime.utcnow)
+
+    student = relationship("Student", back_populates="project_ideas")
+    feasibility_reports = relationship(
+        "FeasibilityReport", back_populates="idea", cascade="all, delete-orphan"
+    )
+    scope_definitions = relationship(
+        "ScopeDefinition", back_populates="idea", cascade="all, delete-orphan"
+    )
+    tech_recommendations = relationship(
+        "TechRecommendation", back_populates="idea", cascade="all, delete-orphan"
+    )
+    timeline_plans = relationship(
+        "TimelinePlan", back_populates="idea", cascade="all, delete-orphan"
+    )
+
+
+class FeasibilityReport(Base):
+    """Milestone 2 - Feasibility Analysis Agent output.
+
+    One row per pipeline run (audit trail); the pipeline always reads the
+    most recent row for a given idea_id.
+    """
+    __tablename__ = "feasibility_reports"
+
+    report_id = Column(String, primary_key=True, default=gen_uuid)
+    idea_id = Column(String, ForeignKey("project_ideas.idea_id"), nullable=False)
+    verdict = Column(String, nullable=False)  # "feasible" | "risky" | "not_feasible"
+    reasoning = Column(String, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    idea = relationship("ProjectIdea", back_populates="feasibility_reports")
+
+
+class ScopeDefinition(Base):
+    """Milestone 2 - Scope Definition Agent output."""
+    __tablename__ = "scope_definitions"
+
+    scope_id = Column(String, primary_key=True, default=gen_uuid)
+    idea_id = Column(String, ForeignKey("project_ideas.idea_id"), nullable=False)
+    objectives = Column(JSON, nullable=False)  # list[str]
+    deliverables = Column(JSON, nullable=False)  # list[str]
+    out_of_scope = Column(JSON, nullable=False)  # list[str]
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    idea = relationship("ProjectIdea", back_populates="scope_definitions")
+
+
+class TechRecommendation(Base):
+    """Milestone 2 - Technology Recommendation Agent output."""
+    __tablename__ = "tech_recommendations"
+
+    recommendation_id = Column(String, primary_key=True, default=gen_uuid)
+    idea_id = Column(String, ForeignKey("project_ideas.idea_id"), nullable=False)
+    stack = Column(JSON, nullable=False)  # list[{"category", "technology", "reasoning"}]
+    reasoning = Column(String, nullable=False)  # overall rationale
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    idea = relationship("ProjectIdea", back_populates="tech_recommendations")
+
+
+class TimelinePlan(Base):
+    """Milestone 2 - Timeline Planning Agent output."""
+    __tablename__ = "timeline_plans"
+
+    plan_id = Column(String, primary_key=True, default=gen_uuid)
+    idea_id = Column(String, ForeignKey("project_ideas.idea_id"), nullable=False)
+    weeks = Column(JSON, nullable=False)  # list[{"week": int, "tasks": list[str]}]
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    idea = relationship("ProjectIdea", back_populates="timeline_plans")

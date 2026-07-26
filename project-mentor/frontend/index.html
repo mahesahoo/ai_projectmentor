@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Academic Project Mentor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #17152b;
+    --ink-soft: #2c2947;
+    --violet: #5b4fe0;
+    --violet-deep: #4a3fc4;
+    --violet-tint: #ece9fc;
+    --amber: #e8934a;
+    --paper: #f4f3f8;
+    --surface: #ffffff;
+    --line: #e2e0ec;
+    --line-soft: #eeedf4;
+    --muted: #6f6c85;
+    --muted-soft: #9b99a0;
+    --ok: #1d9e75;
+    --ok-tint: #e1f5ee;
+    --err: #d0453a;
+    --radius: 14px;
+    --shadow: 0 1px 2px rgba(23,21,43,.04), 0 8px 30px rgba(23,21,43,.06);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+  h1, h2, h3, .display { font-family: 'Space Grotesk', sans-serif; letter-spacing: -.02em; }
+
+  /* ---------- View system ---------- */
+  .view { display: none; animation: fade .45s cubic-bezier(.16,1,.3,1); }
+  .view.active { display: block; }
+  @keyframes fade { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .view, * { animation: none !important; transition: none !important; } }
+
+  /* ---------- Auth screens ---------- */
+  .auth-wrap { min-height: 100vh; display: grid; grid-template-columns: 1.1fr 1fr; }
+  @media (max-width: 860px) { .auth-wrap { grid-template-columns: 1fr; } .auth-brand { display: none; } }
+
+  .auth-brand {
+    background: var(--ink);
+    color: #fff;
+    padding: 56px 48px;
+    display: flex; flex-direction: column; justify-content: space-between;
+    position: relative; overflow: hidden;
+  }
+  .auth-brand::after {
+    content: ''; position: absolute; right: -120px; bottom: -120px;
+    width: 360px; height: 360px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(91,79,224,.5), transparent 70%);
+  }
+  .brand-mark { display: flex; align-items: center; gap: 10px; font-family: 'Space Grotesk'; font-weight: 700; font-size: 17px; }
+  .brand-dot { width: 26px; height: 26px; border-radius: 8px; background: var(--violet); display: grid; place-items: center; font-size: 15px; }
+  .auth-brand h1 { font-size: 40px; line-height: 1.1; font-weight: 700; margin-bottom: 18px; position: relative; z-index: 1; }
+  .auth-brand p { color: #b8b5d4; font-size: 15px; max-width: 340px; position: relative; z-index: 1; }
+  .pipeline { display: flex; flex-direction: column; gap: 14px; position: relative; z-index: 1; }
+  .pipe-step { display: flex; align-items: center; gap: 12px; font-size: 14px; color: #d6d4ea; }
+  .pipe-num { width: 24px; height: 24px; border-radius: 7px; background: rgba(255,255,255,.08); display: grid; place-items: center; font-size: 12px; font-weight: 600; font-family: 'Space Grotesk'; flex-shrink: 0; }
+
+  .auth-panel { display: flex; align-items: center; justify-content: center; padding: 40px 28px; }
+  .auth-card { width: 100%; max-width: 380px; }
+  .auth-card .eyebrow { font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--violet); margin-bottom: 8px; }
+  .auth-card > h2 { font-size: 26px; margin-bottom: 6px; }
+  .auth-card .sub { color: var(--muted); font-size: 14px; margin-bottom: 26px; }
+
+  .field { margin-bottom: 15px; position: relative; }
+  .field label { display: block; font-size: 12.5px; font-weight: 500; color: var(--ink-soft); margin-bottom: 6px; }
+  .field input, .field select {
+    width: 100%; padding: 11px 13px; border: 1.5px solid var(--line);
+    border-radius: 10px; font-size: 14px; font-family: inherit; background: var(--surface);
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .field input:focus, .field select:focus {
+    outline: none; border-color: var(--violet); box-shadow: 0 0 0 3px var(--violet-tint);
+  }
+  .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .btn {
+    width: 100%; padding: 12px; border: none; border-radius: 10px;
+    background: var(--violet); color: #fff; font-size: 14.5px; font-weight: 600;
+    font-family: inherit; cursor: pointer; transition: transform .1s, background .15s;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn:hover { background: var(--violet-deep); }
+  .btn:active { transform: scale(.985); }
+  .btn.ghost { background: transparent; color: var(--violet); border: 1.5px solid var(--line); }
+  .btn.ghost:hover { border-color: var(--violet); background: var(--violet-tint); }
+  .btn.sm { width: auto; padding: 9px 16px; font-size: 13px; }
+
+  .switch { text-align: center; margin-top: 20px; font-size: 13.5px; color: var(--muted); }
+  .switch a { color: var(--violet); font-weight: 600; text-decoration: none; cursor: pointer; }
+  .msg { font-size: 13px; margin-top: 12px; padding: 9px 12px; border-radius: 8px; display: none; }
+  .msg.show { display: block; }
+  .msg.err { background: #fdecea; color: var(--err); }
+  .msg.ok { background: var(--ok-tint); color: var(--ok); }
+
+  /* ---------- App shell ---------- */
+  .shell { display: grid; grid-template-columns: 232px 1fr; min-height: 100vh; }
+  @media (max-width: 760px) { .shell { grid-template-columns: 1fr; } .sidebar { display: none; } }
+  .sidebar {
+    background: var(--ink); color: #fff; padding: 24px 18px;
+    display: flex; flex-direction: column;
+  }
+  .sidebar .brand-mark { margin-bottom: 32px; }
+  .nav { display: flex; flex-direction: column; gap: 3px; flex: 1; }
+  .nav-item {
+    display: flex; align-items: center; gap: 11px; padding: 10px 12px;
+    border-radius: 9px; color: #b0ade0; font-size: 14px; font-weight: 500;
+    cursor: pointer; transition: background .15s, color .15s; border: none; background: none; text-align: left; width: 100%; font-family: inherit;
+  }
+  .nav-item:hover { background: rgba(255,255,255,.06); color: #fff; }
+  .nav-item.active { background: var(--violet); color: #fff; }
+  .nav-ico { width: 18px; text-align: center; font-size: 15px; }
+  .side-user { padding: 12px; border-radius: 10px; background: rgba(255,255,255,.05); font-size: 13px; }
+  .side-user .nm { font-weight: 600; color: #fff; }
+  .side-user .em { color: #8f8cb8; font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .side-user button { margin-top: 10px; width: 100%; background: rgba(255,255,255,.08); color: #d6d4ea; border: none; padding: 7px; border-radius: 7px; font-size: 12.5px; cursor: pointer; font-family: inherit; }
+  .side-user button:hover { background: rgba(255,255,255,.14); }
+
+  .main { padding: 34px 40px; max-width: 900px; }
+  @media (max-width: 760px) { .main { padding: 24px 20px; } }
+  .page-head { margin-bottom: 26px; }
+  .page-head h2 { font-size: 27px; margin-bottom: 4px; }
+  .page-head p { color: var(--muted); font-size: 14.5px; }
+
+  .card {
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--radius); padding: 24px; margin-bottom: 20px; box-shadow: var(--shadow);
+  }
+  .card h3 { font-size: 16px; margin-bottom: 4px; }
+  .card .card-sub { font-size: 13px; color: var(--muted); margin-bottom: 18px; }
+
+  /* completeness meter */
+  .meter-card { display: flex; align-items: center; gap: 22px; }
+  .ring { --pct: 0; width: 76px; height: 76px; border-radius: 50%; flex-shrink: 0;
+    background: conic-gradient(var(--violet) calc(var(--pct)*1%), var(--line-soft) 0);
+    display: grid; place-items: center; transition: --pct .8s ease; }
+  .ring::before { content: ''; position: absolute; width: 58px; height: 58px; border-radius: 50%; background: var(--surface); }
+  .ring span { position: relative; font-family: 'Space Grotesk'; font-weight: 700; font-size: 18px; }
+  .meter-info h3 { margin-bottom: 3px; }
+  .meter-info p { font-size: 13px; color: var(--muted); }
+
+  /* segmented proficiency */
+  .seg { display: inline-flex; border: 1.5px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .seg button {
+    padding: 9px 16px; border: none; background: var(--surface); font-size: 13px; font-weight: 500;
+    cursor: pointer; font-family: inherit; color: var(--muted); border-right: 1.5px solid var(--line); transition: all .15s;
+  }
+  .seg button:last-child { border-right: none; }
+  .seg button.on { background: var(--violet); color: #fff; }
+
+  .skill-add { display: grid; grid-template-columns: 1fr auto auto; gap: 12px; align-items: end; }
+  @media (max-width: 620px) { .skill-add { grid-template-columns: 1fr; } }
+
+  /* skill list */
+  .skill-item { padding: 14px 0; border-bottom: 1px solid var(--line-soft); }
+  .skill-item:last-child { border-bottom: none; }
+  .skill-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .skill-name { font-weight: 600; font-size: 14px; }
+  .skill-lvl { font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 20px; }
+  .lvl-Beginner { background: #fdf0e3; color: #b06a24; }
+  .lvl-Intermediate { background: var(--violet-tint); color: var(--violet-deep); }
+  .lvl-Advanced { background: var(--ok-tint); color: var(--ok); }
+  .bar { height: 7px; background: var(--line-soft); border-radius: 20px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 20px; width: 0; transition: width 1s cubic-bezier(.16,1,.3,1); }
+  .empty { text-align: center; padding: 30px; color: var(--muted-soft); font-size: 14px; }
+  .empty .big { font-size: 26px; margin-bottom: 8px; }
+
+  .toast {
+    position: fixed; bottom: 24px; right: 24px; background: var(--ink); color: #fff;
+    padding: 13px 18px; border-radius: 11px; font-size: 13.5px; box-shadow: 0 10px 40px rgba(0,0,0,.25);
+    transform: translateY(80px); opacity: 0; transition: .35s cubic-bezier(.16,1,.3,1); z-index: 100;
+    display: flex; align-items: center; gap: 9px;
+  }
+  .toast.show { transform: none; opacity: 1; }
+  .toast .tick { color: #7dffc4; }
+
+  .status-pill { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--amber); background: #fdf0e3; padding: 4px 11px; border-radius: 20px; }
+  .status-pill.st-analyzed { color: var(--ok); background: var(--ok-tint); }
+  .status-pill.st-failed { color: var(--err); background: #fdecea; }
+  .idea-note { font-size: 13px; color: var(--muted); background: var(--line-soft); border-radius: 10px; padding: 13px 15px; margin-top: 14px; }
+
+  /* ---------- Milestone 2: blueprint modal ---------- */
+  .idea-actions { margin-top: 10px; }
+  .modal-backdrop {
+    position: fixed; inset: 0; background: rgba(23,21,43,.45);
+    display: none; align-items: center; justify-content: center; z-index: 200; padding: 24px;
+  }
+  .modal-backdrop.show { display: flex; }
+  .modal {
+    background: var(--surface); border-radius: var(--radius); max-width: 640px; width: 100%;
+    max-height: 85vh; overflow-y: auto; padding: 28px; box-shadow: var(--shadow);
+  }
+  .modal-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; gap: 12px; }
+  .modal-close { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--muted); line-height: 1; flex-shrink: 0; }
+  .bp-section { margin-bottom: 20px; }
+  .bp-section h4 { font-size: 12.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin-bottom: 10px; }
+  .verdict-badge { display: inline-block; font-size: 13px; font-weight: 700; padding: 5px 14px; border-radius: 20px; margin-bottom: 10px; }
+  .verdict-feasible { background: var(--ok-tint); color: var(--ok); }
+  .verdict-risky { background: #fdf0e3; color: #b06a24; }
+  .verdict-not_feasible { background: #fdecea; color: var(--err); }
+  .bp-list { padding-left: 18px; font-size: 13.5px; color: var(--ink-soft); }
+  .bp-list li { margin-bottom: 5px; }
+  .tech-item { padding: 10px 0; border-bottom: 1px solid var(--line-soft); font-size: 13.5px; }
+  .tech-item:last-child { border-bottom: none; }
+  .tech-item b { color: var(--violet-deep); }
+  .week-item { display: flex; gap: 10px; padding: 8px 0; font-size: 13.5px; }
+  .week-num { font-family: 'Space Grotesk'; font-weight: 700; color: var(--violet); flex-shrink: 0; width: 60px; }
+  .bp-loading, .bp-empty { text-align: center; padding: 30px; color: var(--muted-soft); font-size: 14px; }
+</style>
+</head>
+<body>
+
+<!-- ============ REGISTER ============ -->
+<div class="view active" id="view-register">
+  <div class="auth-wrap">
+    <div class="auth-brand">
+      <div class="brand-mark"><span class="brand-dot">◈</span> Project Mentor</div>
+      <div>
+        <h1>Turn a rough idea into a real project plan.</h1>
+        <p>Set up your profile and tell us what you know. Everything from here builds toward your personalized mentoring pipeline.</p>
+      </div>
+      <div class="pipeline">
+        <div class="pipe-step"><span class="pipe-num">1</span> Create your account</div>
+        <div class="pipe-step"><span class="pipe-num">2</span> Complete your profile</div>
+        <div class="pipe-step"><span class="pipe-num">3</span> Rate your skills</div>
+        <div class="pipe-step"><span class="pipe-num">4</span> Submit a project idea</div>
+      </div>
+    </div>
+    <div class="auth-panel">
+      <div class="auth-card">
+        <div class="eyebrow">Get started</div>
+        <h2>Create your account</h2>
+        <p class="sub">Milestone 1 — student onboarding.</p>
+        <div class="field"><label>Full name</label><input id="r-name" placeholder="Manisha Sahoo"></div>
+        <div class="field"><label>Email</label><input id="r-email" type="email" placeholder="you@college.edu"></div>
+        <div class="field"><label>Password</label><input id="r-pass" type="password" placeholder="At least 8 characters"></div>
+        <div class="row-2">
+          <div class="field"><label>Branch</label><input id="r-branch" placeholder="CSE"></div>
+          <div class="field"><label>Year</label><input id="r-year" type="number" min="1" max="5" placeholder="4"></div>
+        </div>
+        <button class="btn" onclick="doRegister()">Create account →</button>
+        <div class="msg" id="r-msg"></div>
+        <div class="switch">Already have an account? <a onclick="show('login')">Log in</a></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ LOGIN ============ -->
+<div class="view" id="view-login">
+  <div class="auth-wrap">
+    <div class="auth-brand">
+      <div class="brand-mark"><span class="brand-dot">◈</span> Project Mentor</div>
+      <div>
+        <h1>Welcome back.</h1>
+        <p>Pick up where you left off — your profile, skills, and project ideas are waiting.</p>
+      </div>
+      <div class="pipeline">
+        <div class="pipe-step"><span class="pipe-num">✓</span> Guided project planning</div>
+        <div class="pipe-step"><span class="pipe-num">✓</span> Skill-aware recommendations</div>
+        <div class="pipe-step"><span class="pipe-num">✓</span> Milestone tracking</div>
+      </div>
+    </div>
+    <div class="auth-panel">
+      <div class="auth-card">
+        <div class="eyebrow">Welcome back</div>
+        <h2>Log in</h2>
+        <p class="sub">Enter your credentials to continue.</p>
+        <div class="field"><label>Email</label><input id="l-email" type="email" placeholder="you@college.edu"></div>
+        <div class="field"><label>Password</label><input id="l-pass" type="password" placeholder="Your password"></div>
+        <button class="btn" onclick="doLogin()">Log in →</button>
+        <div class="msg" id="l-msg"></div>
+        <div class="switch">New here? <a onclick="show('register')">Create an account</a></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ APP ============ -->
+<div class="view" id="view-app">
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand-mark"><span class="brand-dot">◈</span> Project Mentor</div>
+      <nav class="nav">
+        <button class="nav-item active" data-tab="profile" onclick="tab('profile')"><span class="nav-ico">◐</span> Profile</button>
+        <button class="nav-item" data-tab="skills" onclick="tab('skills')"><span class="nav-ico">◑</span> Skill assessment</button>
+        <button class="nav-item" data-tab="idea" onclick="tab('idea')"><span class="nav-ico">◒</span> Project idea</button>
+      </nav>
+      <div class="side-user">
+        <div class="nm" id="side-name">—</div>
+        <div class="em" id="side-email">—</div>
+        <button onclick="doLogout()">Log out</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <!-- Profile tab -->
+      <section id="tab-profile">
+        <div class="page-head">
+          <h2>Your profile</h2>
+          <p>Keep your details current — the mentor uses these to tailor guidance.</p>
+        </div>
+        <div class="card meter-card">
+          <div class="ring" id="ring"><span id="ring-pct">0%</span></div>
+          <div class="meter-info">
+            <h3>Profile completeness</h3>
+            <p id="meter-text">Fill in your details and add at least one skill.</p>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Details</h3>
+          <p class="card-sub">Your email is fixed — it's your account identity.</p>
+          <div class="row-2">
+            <div class="field"><label>Full name</label><input id="p-name"></div>
+            <div class="field"><label>Email</label><input id="p-email" disabled style="background:var(--line-soft);color:var(--muted)"></div>
+          </div>
+          <div class="row-2">
+            <div class="field"><label>Branch</label><input id="p-branch" placeholder="e.g. CSE"></div>
+            <div class="field"><label>Year</label><input id="p-year" type="number" min="1" max="5"></div>
+          </div>
+          <button class="btn sm" onclick="saveProfile()">Save changes</button>
+        </div>
+      </section>
+
+      <!-- Skills tab -->
+      <section id="tab-skills" style="display:none">
+        <div class="page-head">
+          <h2>Skill assessment</h2>
+          <p>Rate your fluency across your tech stack. This feeds the tech-recommendation agent later.</p>
+        </div>
+        <div class="card">
+          <h3>Add a rating</h3>
+          <p class="card-sub">Pick a stack and how confident you are with it.</p>
+          <div class="skill-add">
+            <div class="field" style="margin:0">
+              <label>Tech stack</label>
+              <select id="s-stack">
+                <option>Python</option><option>JavaScript</option><option>Java</option>
+                <option>Machine Learning</option><option>Web Development</option>
+                <option>SQL / Databases</option><option>C / C++</option><option>Other</option>
+              </select>
+            </div>
+            <div class="field" style="margin:0">
+              <label>Proficiency</label>
+              <div class="seg" id="s-seg">
+                <button class="on" data-lvl="Beginner" onclick="pickLvl(this)">Beginner</button>
+                <button data-lvl="Intermediate" onclick="pickLvl(this)">Intermediate</button>
+                <button data-lvl="Advanced" onclick="pickLvl(this)">Advanced</button>
+              </div>
+            </div>
+            <button class="btn sm" onclick="addSkill()" style="height:41px">+ Add</button>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Your skills</h3>
+          <p class="card-sub">Everything you've rated so far.</p>
+          <div id="skill-list"></div>
+        </div>
+      </section>
+
+      <!-- Idea tab (preview / Task 4) -->
+      <section id="tab-idea" style="display:none">
+        <div class="page-head">
+          <h2>Project idea</h2>
+          <p>Drop a rough idea in a couple of lines — the mentor takes it from there.</p>
+        </div>
+        <div class="card">
+          <h3>Submit an idea</h3>
+          <p class="card-sub">Title plus a 2–3 line description is all you need.</p>
+          <div class="field"><label>Title</label><input id="i-title" placeholder="e.g. Smart attendance via face recognition"></div>
+          <div class="field"><label>Description</label><input id="i-desc" placeholder="What's the idea, in 2–3 lines?"></div>
+          <button class="btn sm" onclick="submitIdea()">Submit idea</button>
+          <div class="idea-note" id="i-list-note">Once submitted, ideas are stored with <b>status = "submitted"</b> — the hook the Feasibility agent flips to "analyzed" in Milestone 2.</div>
+          <div id="idea-list" style="margin-top:16px"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<div class="toast" id="toast"><span class="tick">✓</span><span id="toast-txt"></span></div>
+
+<!-- ============ BLUEPRINT MODAL (Milestone 2 agent pipeline results) ============ -->
+<div class="modal-backdrop" id="bp-modal" onclick="if(event.target===this) closeBlueprint()">
+  <div class="modal">
+    <div class="modal-head">
+      <div>
+        <h3 id="bp-title">—</h3>
+        <p class="card-sub" style="margin:0" id="bp-status-line">—</p>
+      </div>
+      <button class="modal-close" onclick="closeBlueprint()">✕</button>
+    </div>
+    <div id="bp-body"></div>
+  </div>
+</div>
+
+<script>
+/* ---------------- Element refs ----------------
+   IDs use hyphens (r-name), but hyphens aren't valid in JS identifiers, so the
+   browser's implicit global shorthand doesn't create them. Bind them explicitly. */
+const $ = id => document.getElementById(id);
+const r_name=$('r-name'), r_email=$('r-email'), r_pass=$('r-pass'), r_branch=$('r-branch'), r_year=$('r-year');
+const l_email=$('l-email'), l_pass=$('l-pass');
+const p_name=$('p-name'), p_email=$('p-email'), p_branch=$('p-branch'), p_year=$('p-year');
+const s_stack=$('s-stack'), i_title=$('i-title'), i_desc=$('i-desc');
+const ring_pct=$('ring-pct'), meter_text=$('meter-text'), side_name=$('side-name'), side_email=$('side-email');
+
+let currentUser = null;
+let ideaPollInterval = null;
+let bpPollInterval = null;
+
+function getToken() {
+  return localStorage.getItem("access_token");
+}
+
+function saveToken(token) {
+  localStorage.setItem("access_token", token);
+}
+
+function clearToken() {
+  localStorage.removeItem("access_token");
+}
+
+async function apiFetch(path, options = {}) {
+  const headers = options.headers || {};
+  const token = getToken();
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+  if (options.body) {
+    headers["Content-Type"] = "application/json";
+  }
+
+  const response = await fetch(`/api${path}`, { ...options, headers });
+
+  if (response.status === 401) {
+    clearToken();
+    show('login');
+    throw new Error("Unauthorized - please log in");
+  }
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.detail || "Something went wrong");
+  }
+  return data;
+}
+
+function escapeHTML(str) {
+  if (!str) return '';
+  return str.replace(/[&<>'"]/g, 
+    tag => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      "'": '&#39;',
+      '"': '&quot;'
+    }[tag] || tag)
+  );
+}
+
+/* ---------------- View + tab routing ---------------- */
+function show(v) {
+  document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+  document.getElementById('view-' + v).classList.add('active');
+  window.scrollTo(0, 0);
+
+  // Update path dynamically
+  const path = window.location.pathname;
+  if (v === 'login' && path !== '/login.html') {
+    history.pushState(null, '', '/login.html');
+  } else if (v === 'register' && path !== '/register.html') {
+    history.pushState(null, '', '/register.html');
+  }
+}
+
+async function tab(t) {
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.toggle('active', b.dataset.tab === t));
+  ['profile', 'skills', 'idea'].forEach(x => document.getElementById('tab-' + x).style.display = x === t ? 'block' : 'none');
+  if (t !== 'idea') clearInterval(ideaPollInterval);
+
+  // Update path dynamically
+  const path = window.location.pathname;
+  if (t === 'profile' && path !== '/profile.html') {
+    history.pushState(null, '', '/profile.html');
+  } else if (t === 'skills' && path !== '/skill_assessment.html') {
+    history.pushState(null, '', '/skill_assessment.html');
+  } else if (t === 'idea' && path !== '/submit_idea.html') {
+    history.pushState(null, '', '/submit_idea.html');
+  }
+
+  if (t === 'skills') await renderSkills();
+  if (t === 'idea') await renderIdeas();
+  if (t === 'profile') await renderMeter();
+}
+
+/* ---------------- Toast ---------------- */
+let toastT;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  document.getElementById('toast-txt').textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastT);
+  toastT = setTimeout(() => el.classList.remove('show'), 2600);
+}
+function flash(id, text, ok) {
+  const el = document.getElementById(id);
+  el.textContent = text; el.className = 'msg show ' + (ok ? 'ok' : 'err');
+}
+
+/* ---------------- Auth ---------------- */
+async function doRegister() {
+  const name = r_name.value.trim(), email = r_email.value.trim().toLowerCase();
+  const pass = r_pass.value, branch = r_branch.value.trim(), year = r_year.value;
+  if (!name || !email || !pass) return flash('r-msg', 'Name, email and password are required.', false);
+  if (pass.length < 8) return flash('r-msg', 'Password must be at least 8 characters.', false);
+
+  const body = {
+    name,
+    email,
+    password: pass,
+    branch: branch || null,
+    year: year ? Number(year) : null
+  };
+
+  try {
+    await apiFetch("/auth/register", {
+      method: "POST",
+      body: JSON.stringify(body)
+    });
+    flash('r-msg', 'Account created — taking you to log in…', true);
+    setTimeout(() => { show('login'); l_email.value = email; }, 900);
+  } catch (err) {
+    flash('r-msg', err.message, false);
+  }
+}
+
+async function doLogin() {
+  const email = l_email.value.trim().toLowerCase(), pass = l_pass.value;
+  if (!email || !pass) return flash('l-msg', 'Email and password are required.', false);
+
+  const body = { email, password: pass };
+  try {
+    const data = await apiFetch("/auth/login", {
+      method: "POST",
+      body: JSON.stringify(body)
+    });
+    saveToken(data.access_token);
+    await boot();
+  } catch (err) {
+    flash('l-msg', err.message, false);
+  }
+}
+
+function doLogout() {
+  clearToken();
+  location.reload();
+}
+
+async function enterApp() {
+  side_name.textContent = currentUser.name;
+  side_email.textContent = currentUser.email;
+  p_name.value = currentUser.name; 
+  p_email.value = currentUser.email;
+  p_branch.value = currentUser.branch || ''; 
+  p_year.value = currentUser.year || '';
+  
+  show('app');
+  
+  const path = window.location.pathname;
+  if (path === '/skill_assessment.html') {
+    await tab('skills');
+  } else if (path === '/submit_idea.html') {
+    await tab('idea');
+  } else {
+    await tab('profile');
+  }
+}
+
+/* ---------------- Profile ---------------- */
+async function saveProfile() {
+  const name = p_name.value.trim();
+  const branch = p_branch.value.trim();
+  const year = p_year.value ? Number(p_year.value) : null;
+
+  try {
+    currentUser = await apiFetch("/profile/me", {
+      method: "PUT",
+      body: JSON.stringify({ name, branch, year })
+    });
+    side_name.textContent = currentUser.name;
+    toast('Profile saved');
+    await renderMeter();
+  } catch (err) {
+    toast('Error saving profile: ' + err.message);
+  }
+}
+
+async function renderMeter() {
+  if (!currentUser) return;
+  
+  let skills = [];
+  try {
+    skills = await apiFetch("/profile/me/skills");
+  } catch (err) {
+    console.error("Error fetching skills for meter", err);
+  }
+
+  let done = 0;
+  if (currentUser.name) done++; 
+  if (currentUser.branch) done++; 
+  if (currentUser.year) done++; 
+  if (skills && skills.length > 0) done++;
+  
+  const pct = Math.round(done / 4 * 100);
+  const ring = document.getElementById('ring');
+  ring.style.setProperty('--pct', pct);
+  ring_pct.textContent = pct + '%';
+  meter_text.textContent = pct === 100 ? 'All set — your profile is complete.' :
+    'Add ' + (4 - done) + ' more ' + (4 - done === 1 ? 'item' : 'items') + ' (details + a skill) to finish.';
+}
+
+/* ---------------- Skills ---------------- */
+let curLvl = 'Beginner';
+function pickLvl(btn) {
+  document.querySelectorAll('#s-seg button').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on'); curLvl = btn.dataset.lvl;
+}
+
+async function addSkill() {
+  const stack = s_stack.value;
+  try {
+    await apiFetch("/profile/me/skills", {
+      method: "POST",
+      body: JSON.stringify({ tech_stack: stack, proficiency_level: curLvl })
+    });
+    toast('Added/Updated ' + stack);
+    await renderSkills(); 
+    await renderMeter();
+  } catch (err) {
+    toast('Error adding skill: ' + err.message);
+  }
+}
+
+async function renderSkills() {
+  let skills = [];
+  try {
+    skills = await apiFetch("/profile/me/skills");
+  } catch (err) {
+    console.error(err);
+    toast('Error loading skills');
+    return;
+  }
+
+  const box = document.getElementById('skill-list');
+  if (!skills || !skills.length) {
+    box.innerHTML = '<div class="empty"><div class="big">◇</div>No skills rated yet. Add your first one above.</div>';
+    return;
+  }
+
+  // Keep only the latest rating for each tech stack
+  const uniqueSkillsMap = {};
+  skills.forEach(s => {
+    if (!uniqueSkillsMap[s.tech_stack] || new Date(s.submitted_at) > new Date(uniqueSkillsMap[s.tech_stack].submitted_at)) {
+      uniqueSkillsMap[s.tech_stack] = s;
+    }
+  });
+  const uniqueSkills = Object.values(uniqueSkillsMap);
+
+  const w = { Beginner: 33, Intermediate: 66, Advanced: 100 };
+  box.innerHTML = uniqueSkills.map(s => `
+    <div class="skill-item">
+      <div class="skill-top">
+        <span class="skill-name">${escapeHTML(s.tech_stack)}</span>
+        <span class="skill-lvl lvl-${s.proficiency_level}">${s.proficiency_level}</span>
+      </div>
+      <div class="bar"><div class="bar-fill lvl-${s.proficiency_level}" style="background:${s.proficiency_level==='Advanced'?'var(--ok)':s.proficiency_level==='Intermediate'?'var(--violet)':'var(--amber)'}"></div></div>
+    </div>`).join('');
+  requestAnimationFrame(() => {
+    box.querySelectorAll('.bar-fill').forEach((el, i) => {
+      el.style.width = w[uniqueSkills[i].proficiency_level] + '%';
+    });
+  });
+}
+
+/* ---------------- Ideas ---------------- */
+async function submitIdea() {
+  const title = i_title.value.trim(), desc = i_desc.value.trim();
+  if (!title || !desc) return toast('Add a title and description');
+
+  try {
+    await apiFetch("/ideas", {
+      method: "POST",
+      body: JSON.stringify({ title, description: desc })
+    });
+    i_title.value = ''; 
+    i_desc.value = '';
+    toast('Idea submitted');
+    await renderIdeas();
+  } catch (err) {
+    toast('Error submitting idea: ' + err.message);
+  }
+}
+
+const TERMINAL_STATUSES = new Set(['analyzed', 'failed']);
+const statusPillClass = s => s === 'analyzed' ? 'st-analyzed' : s === 'failed' ? 'st-failed' : '';
+
+async function renderIdeas() {
+  let ideas = [];
+  try {
+    ideas = await apiFetch("/ideas");
+  } catch (err) {
+    console.error(err);
+    toast('Error loading ideas');
+    return;
+  }
+
+  const box = document.getElementById('idea-list');
+  if (!ideas || !ideas.length) { box.innerHTML = ''; clearInterval(ideaPollInterval); return; }
+  box.innerHTML = ideas.map(i => `
+    <div class="skill-item">
+      <div class="skill-top">
+        <span class="skill-name">${escapeHTML(i.title)}</span>
+        <span class="status-pill ${statusPillClass(i.status)}">● ${escapeHTML(i.status)}</span>
+      </div>
+      <p style="font-size:13px;color:var(--muted)">${escapeHTML(i.description)}</p>
+      <div class="idea-actions"><button class="btn ghost sm" onclick="openBlueprint('${i.idea_id}')">View analysis →</button></div>
+    </div>`).join('');
+
+  // Keep status pills live without a manual refresh, until every idea shown
+  // has reached a terminal state (analyzed/failed) - then stop polling.
+  clearInterval(ideaPollInterval);
+  if (ideas.some(i => !TERMINAL_STATUSES.has(i.status))) {
+    ideaPollInterval = setInterval(renderIdeas, 4000);
+  }
+}
+
+/* ---------------- Blueprint modal (Milestone 2 agent pipeline) ---------------- */
+const VERDICT_LABEL = { feasible: 'Feasible', risky: 'Risky', not_feasible: 'Not Feasible' };
+
+async function openBlueprint(ideaId) {
+  document.getElementById('bp-modal').classList.add('show');
+  document.getElementById('bp-title').textContent = 'Loading…';
+  document.getElementById('bp-status-line').textContent = '';
+  document.getElementById('bp-body').innerHTML = '<div class="bp-loading">Loading analysis…</div>';
+  await loadBlueprint(ideaId);
+  clearInterval(bpPollInterval);
+  bpPollInterval = setInterval(() => loadBlueprint(ideaId), 3000);
+}
+
+function closeBlueprint() {
+  document.getElementById('bp-modal').classList.remove('show');
+  clearInterval(bpPollInterval);
+}
+
+async function loadBlueprint(ideaId) {
+  let bp;
+  try {
+    bp = await apiFetch(`/ideas/${ideaId}/blueprint`);
+  } catch (err) {
+    document.getElementById('bp-body').innerHTML =
+      `<div class="bp-empty">Error loading analysis: ${escapeHTML(err.message)}</div>`;
+    clearInterval(bpPollInterval);
+    return;
+  }
+  renderBlueprint(bp);
+}
+
+function renderBlueprint(bp) {
+  document.getElementById('bp-title').textContent = bp.idea.title;
+  const status = bp.idea.status;
+  document.getElementById('bp-status-line').textContent =
+    status === 'analyzed' ? 'Analysis complete' :
+    status === 'failed' ? 'Analysis failed' :
+    'Analyzing… (' + status.replace('analyzing_', '').replace('_', ' ') + ')';
+
+  if (TERMINAL_STATUSES.has(status)) clearInterval(bpPollInterval);
+
+  if (status === 'failed') {
+    document.getElementById('bp-body').innerHTML =
+      '<div class="bp-empty">The agent pipeline hit an error on this idea. Check the server logs, or resubmit.</div>';
+    return;
+  }
+
+  if (!bp.feasibility) {
+    document.getElementById('bp-body').innerHTML =
+      '<div class="bp-loading">Still working — the Feasibility agent is running now…</div>';
+    return;
+  }
+
+  let html = `
+    <div class="bp-section">
+      <h4>Feasibility</h4>
+      <div><span class="verdict-badge verdict-${bp.feasibility.verdict}">${VERDICT_LABEL[bp.feasibility.verdict] || bp.feasibility.verdict}</span></div>
+      <p style="font-size:13.5px;color:var(--ink-soft)">${escapeHTML(bp.feasibility.reasoning)}</p>
+    </div>`;
+
+  if (bp.scope) {
+    html += `
+    <div class="bp-section">
+      <h4>Scope</h4>
+      <p style="font-size:13px;font-weight:600;margin-bottom:4px">Objectives</p>
+      <ul class="bp-list">${bp.scope.objectives.map(o => `<li>${escapeHTML(o)}</li>`).join('')}</ul>
+      <p style="font-size:13px;font-weight:600;margin:10px 0 4px">Deliverables</p>
+      <ul class="bp-list">${bp.scope.deliverables.map(o => `<li>${escapeHTML(o)}</li>`).join('')}</ul>
+      <p style="font-size:13px;font-weight:600;margin:10px 0 4px">Out of scope</p>
+      <ul class="bp-list">${bp.scope.out_of_scope.map(o => `<li>${escapeHTML(o)}</li>`).join('')}</ul>
+    </div>`;
+  } else if (status !== 'analyzed') {
+    html += '<div class="bp-loading">Scope agent running next…</div>';
+  }
+
+  if (bp.tech) {
+    html += `
+    <div class="bp-section">
+      <h4>Recommended stack</h4>
+      ${bp.tech.stack.map(s => `<div class="tech-item"><b>${escapeHTML(s.category)}:</b> ${escapeHTML(s.technology)} — ${escapeHTML(s.reasoning)}</div>`).join('')}
+      <p style="font-size:13px;color:var(--muted);margin-top:10px">${escapeHTML(bp.tech.reasoning)}</p>
+    </div>`;
+  }
+
+  if (bp.timeline) {
+    html += `
+    <div class="bp-section">
+      <h4>Timeline</h4>
+      ${bp.timeline.weeks.map(w => `<div class="week-item"><span class="week-num">Week ${w.week}</span><span>${w.tasks.map(t => escapeHTML(t)).join(', ')}</span></div>`).join('')}
+    </div>`;
+  }
+
+  document.getElementById('bp-body').innerHTML = html;
+}
+
+/* ---------------- Boot ---------------- */
+async function boot() {
+  const token = getToken();
+  const path = window.location.pathname;
+
+  if (token) {
+    try {
+      currentUser = await apiFetch("/profile/me");
+      if (currentUser) {
+        await enterApp();
+        return;
+      }
+    } catch (err) {
+      console.error("Session restoration failed", err);
+      clearToken();
+    }
+  }
+
+  // Not logged in or invalid token
+  if (path === '/login.html') {
+    show('login');
+  } else {
+    show('register');
+  }
+}
+
+window.onpopstate = async () => {
+  await boot();
+};
+
+boot();
+</script>
+</body>
+</html>

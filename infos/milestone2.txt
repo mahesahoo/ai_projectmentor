@@ -1,0 +1,17 @@
+I am adding the Milestone 2 details split up into tasks you can work on.
+
+Goal for this milestone is to start building with the agents for the pipeline
+
+TASKS:
+TASK 1 -   Building Feasibility Analysis Agent
+
+TASK 2 -  Building Scope Definition Agent
+
+TASK 3 -  Building Technology Recommendation Agent
+
+TASK 4 -  Building Timeline Planning Agent
+
+TASK 5 -  Validation
+You should test your product with multiple project ideas and see if the pipeline works correctly. 
+
+So, all these tasks comprise Milestone 1 and their end deliverables are - Working of all the agents accurately, and the agentic pipeline till here correctly.

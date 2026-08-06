@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+
+venv/
+.venv/
+
+project_mentor.db
+server.log
+
+.env
+~$*.pptx

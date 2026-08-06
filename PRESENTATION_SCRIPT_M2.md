@@ -18,7 +18,7 @@ was validation, not a results-page UI task.
 **Exact commands, in order:**
 
 ```bash
-cd /home/mahesh/mics/project-mentor
+cd /home/mahesh/mics
 source venv/bin/activate
 export GEMINI_API_KEY="..."          # your real key
 echo $GEMINI_API_KEY                  # confirm it printed, not empty

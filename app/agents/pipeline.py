@@ -2,12 +2,14 @@ from sqlalchemy.orm import Session
 
 from app.agents import status
 from app.agents.feasibility import run_feasibility_agent
+from app.agents.risk import run_risk_agent
 from app.agents.scope import run_scope_agent
 from app.agents.tech import run_tech_agent
 from app.agents.timeline import run_timeline_agent
 from app.models import (
     FeasibilityReport,
     ProjectIdea,
+    RiskAssessment,
     ScopeDefinition,
     SkillAssessment,
     TechRecommendation,
@@ -16,7 +18,7 @@ from app.models import (
 
 
 def run_pipeline(idea_id: str, db: Session) -> None:
-    """Runs the Milestone 2 agent pipeline for one submitted idea.
+    """Runs the Milestone 2/3 agent pipeline for one submitted idea.
 
     Called as a FastAPI BackgroundTask right after idea submission (see
     submit_idea in app/routers/ideas.py). Each stage persists its output and
@@ -106,6 +108,24 @@ def run_pipeline(idea_id: str, db: Session) -> None:
             TimelinePlan(
                 idea_id=idea.idea_id,
                 weeks=[week.model_dump() for week in timeline.weeks],
+            )
+        )
+        db.commit()
+
+        idea.status = status.ANALYZING_RISK
+        db.commit()
+        risk = run_risk_agent(
+            idea.title,
+            idea.description,
+            scope.objectives,
+            scope.deliverables,
+            tech.stack,
+            timeline.weeks,
+        )
+        db.add(
+            RiskAssessment(
+                idea_id=idea.idea_id,
+                risks=[item.model_dump() for item in risk.risks],
             )
         )
         db.commit()

@@ -217,7 +217,37 @@
   .tech-item b { color: var(--violet-deep); }
   .week-item { display: flex; gap: 10px; padding: 8px 0; font-size: 13.5px; }
   .week-num { font-family: 'Space Grotesk'; font-weight: 700; color: var(--violet); flex-shrink: 0; width: 60px; }
+  .risk-item { padding: 10px 0; border-bottom: 1px solid var(--line-soft); font-size: 13.5px; }
+  .risk-item:last-child { border-bottom: none; }
+  .likelihood-badge { display: inline-block; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; padding: 2px 8px; border-radius: 10px; margin-right: 8px; vertical-align: middle; }
+  .likelihood-low { background: var(--ok-tint); color: var(--ok); }
+  .likelihood-medium { background: #fdf0e3; color: #b06a24; }
+  .likelihood-high { background: #fdecea; color: var(--err); }
+  .risk-mitigation { margin-top: 4px; color: var(--muted); font-size: 12.5px; }
   .bp-loading, .bp-empty { text-align: center; padding: 30px; color: var(--muted-soft); font-size: 14px; }
+  .chat-messages { max-height: 260px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+  .chat-msg { max-width: 85%; padding: 8px 12px; border-radius: 12px; font-size: 13.5px; line-height: 1.4; white-space: pre-wrap; }
+  .chat-msg.student { align-self: flex-end; background: var(--violet); color: #fff; border-bottom-right-radius: 3px; }
+  .chat-msg.mentor { align-self: flex-start; background: var(--violet-tint); color: var(--ink); border-bottom-left-radius: 3px; }
+  .chat-msg.pending { opacity: .6; }
+  .chat-input-row { display: flex; gap: 8px; }
+  .chat-input { flex: 1; padding: 9px 12px; border-radius: 10px; border: 1px solid var(--line-soft); font-size: 13.5px; font-family: inherit; }
+  .chat-empty { color: var(--muted-soft); font-size: 13px; text-align: center; padding: 10px 0; }
+  .progress-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; max-height: 180px; overflow-y: auto; }
+  .progress-item { padding: 8px 10px; background: var(--violet-tint); border-radius: 8px; font-size: 13px; color: var(--ink-soft); }
+  .progress-item .pweek { font-weight: 700; color: var(--violet-deep); margin-right: 6px; }
+  .progress-form { display: flex; gap: 8px; margin-bottom: 10px; }
+  .progress-week-input { width: 60px; padding: 9px 8px; border-radius: 10px; border: 1px solid var(--line-soft); font-size: 13.5px; font-family: inherit; }
+  .progress-text-input { flex: 1; padding: 9px 12px; border-radius: 10px; border: 1px solid var(--line-soft); font-size: 13.5px; font-family: inherit; }
+  .replan-row { display: flex; justify-content: flex-end; }
+  .doc-form { display: flex; gap: 8px; margin-bottom: 10px; }
+  .doc-type-select { flex: 1; padding: 9px 10px; border-radius: 10px; border: 1px solid var(--line-soft); font-size: 13.5px; font-family: inherit; background: var(--surface); color: var(--ink); }
+  .doc-list { display: flex; flex-direction: column; gap: 8px; }
+  .doc-item { border: 1px solid var(--line-soft); border-radius: 10px; overflow: hidden; }
+  .doc-item-head { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; cursor: pointer; font-size: 13px; background: var(--violet-tint); }
+  .doc-date { color: var(--muted); font-weight: 400; font-size: 11.5px; }
+  .doc-content { display: none; margin: 0; padding: 12px; font-size: 12.5px; white-space: pre-wrap; font-family: ui-monospace, 'SF Mono', monospace; max-height: 320px; overflow-y: auto; color: var(--ink-soft); }
+  .doc-content.show { display: block; }
 </style>
 </head>
 <body>
@@ -763,6 +793,7 @@ async function openBlueprint(ideaId) {
 function closeBlueprint() {
   document.getElementById('bp-modal').classList.remove('show');
   clearInterval(bpPollInterval);
+  currentBlueprintIdeaId = null;
 }
 
 async function loadBlueprint(ideaId) {
@@ -839,7 +870,226 @@ function renderBlueprint(bp) {
     </div>`;
   }
 
+  if (bp.risk) {
+    html += `
+    <div class="bp-section">
+      <h4>Risks &amp; Mitigations</h4>
+      ${bp.risk.risks.map(r => `<div class="risk-item"><span class="likelihood-badge likelihood-${r.likelihood}">${escapeHTML(r.likelihood)}</span>${escapeHTML(r.risk)}<div class="risk-mitigation">→ ${escapeHTML(r.mitigation)}</div></div>`).join('')}
+    </div>`;
+  } else if (status !== 'analyzed') {
+    html += '<div class="bp-loading">Risk agent running next…</div>';
+  }
+
+  if (status === 'analyzed' && bp.timeline) {
+    html += `
+    <div class="bp-section">
+      <h4>Progress &amp; Replanning</h4>
+      <div class="progress-list" id="progress-list"><div class="chat-empty">Loading…</div></div>
+      <div class="progress-form">
+        <input type="number" id="progress-week-input" class="progress-week-input" placeholder="Wk" min="1">
+        <input type="text" id="progress-text-input" class="progress-text-input" placeholder="Log how this week went…"
+               onkeydown="if(event.key==='Enter'){event.preventDefault();logProgress();}">
+        <button class="btn ghost sm" onclick="logProgress()">Log</button>
+      </div>
+      <div class="replan-row">
+        <button class="btn sm" id="replan-btn" onclick="requestReplan()">Request replan →</button>
+      </div>
+    </div>`;
+  }
+
+  if (status === 'analyzed') {
+    html += `
+    <div class="bp-section">
+      <h4>Documents</h4>
+      <div class="doc-form">
+        <select id="doc-type-select" class="doc-type-select">
+          <option value="synopsis">Synopsis</option>
+          <option value="methodology">Methodology</option>
+          <option value="progress_report">Progress Report</option>
+        </select>
+        <button class="btn ghost sm" id="doc-gen-btn" onclick="generateDocument()">Generate</button>
+      </div>
+      <div class="doc-list" id="doc-list"><div class="chat-empty">Loading…</div></div>
+    </div>`;
+  }
+
+  if (status === 'analyzed') {
+    html += `
+    <div class="bp-section">
+      <h4>Ask your mentor</h4>
+      <div class="chat-messages" id="chat-messages"><div class="chat-empty">Loading conversation…</div></div>
+      <div class="chat-input-row">
+        <input type="text" id="chat-input" class="chat-input" placeholder="Ask about scope, tech, timeline, risks…"
+               onkeydown="if(event.key==='Enter'){event.preventDefault();sendChatMessage();}">
+        <button class="btn sm" onclick="sendChatMessage()">Send</button>
+      </div>
+    </div>`;
+  }
+
   document.getElementById('bp-body').innerHTML = html;
+
+  if (status === 'analyzed') {
+    currentBlueprintIdeaId = bp.idea.idea_id;
+    loadChatHistory(bp.idea.idea_id);
+    loadDocuments(bp.idea.idea_id);
+    if (bp.timeline) loadProgressHistory(bp.idea.idea_id);
+  }
+}
+
+/* ---------------- Documentation generation (Milestone 3) ---------------- */
+const DOC_TYPE_LABEL = { synopsis: 'Synopsis', methodology: 'Methodology', progress_report: 'Progress Report' };
+
+async function loadDocuments(ideaId) {
+  const box = document.getElementById('doc-list');
+  if (!box) return;
+  try {
+    const docs = await apiFetch(`/ideas/${ideaId}/documents`);
+    if (!document.getElementById('doc-list') || currentBlueprintIdeaId !== ideaId) return;
+    box.innerHTML = docs.length
+      ? docs.map(d => `
+        <div class="doc-item">
+          <div class="doc-item-head" onclick="this.nextElementSibling.classList.toggle('show')">
+            <b>${escapeHTML(DOC_TYPE_LABEL[d.doc_type] || d.doc_type)}</b>
+            <span class="doc-date">${new Date(d.created_at).toLocaleString()}</span>
+          </div>
+          <pre class="doc-content">${escapeHTML(d.content)}</pre>
+        </div>`).join('')
+      : '<div class="chat-empty">No documents generated yet.</div>';
+  } catch (err) {
+    box.innerHTML = `<div class="chat-empty">Couldn't load documents: ${escapeHTML(err.message)}</div>`;
+  }
+}
+
+async function generateDocument() {
+  const ideaId = currentBlueprintIdeaId;
+  const select = document.getElementById('doc-type-select');
+  const btn = document.getElementById('doc-gen-btn');
+  if (!ideaId || !select) return;
+  const docType = select.value;
+  if (btn) { btn.disabled = true; btn.textContent = 'Generating…'; }
+  try {
+    await apiFetch(`/ideas/${ideaId}/documents`, {
+      method: 'POST',
+      body: JSON.stringify({ doc_type: docType }),
+    });
+    await loadDocuments(ideaId);
+    toast('Document generated');
+  } catch (err) {
+    toast('Error generating document: ' + err.message);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Generate'; }
+  }
+}
+
+/* ---------------- Progress tracking + replan (Milestone 3) ---------------- */
+async function loadProgressHistory(ideaId) {
+  const box = document.getElementById('progress-list');
+  if (!box) return;
+  try {
+    const history = await apiFetch(`/ideas/${ideaId}/progress`);
+    if (!document.getElementById('progress-list') || currentBlueprintIdeaId !== ideaId) return;
+    box.innerHTML = history.length
+      ? history.map(p => `<div class="progress-item">${p.week_number ? `<span class="pweek">Week ${p.week_number}</span>` : ''}${escapeHTML(p.update_text)}</div>`).join('')
+      : '<div class="chat-empty">No progress logged yet.</div>';
+  } catch (err) {
+    box.innerHTML = `<div class="chat-empty">Couldn't load progress: ${escapeHTML(err.message)}</div>`;
+  }
+}
+
+async function logProgress() {
+  const ideaId = currentBlueprintIdeaId;
+  const weekInput = document.getElementById('progress-week-input');
+  const textInput = document.getElementById('progress-text-input');
+  if (!ideaId || !textInput) return;
+  const text = textInput.value.trim();
+  if (!text) return;
+  const week = weekInput.value ? parseInt(weekInput.value, 10) : null;
+
+  textInput.disabled = true;
+  try {
+    await apiFetch(`/ideas/${ideaId}/progress`, {
+      method: 'POST',
+      body: JSON.stringify({ week_number: week, update_text: text }),
+    });
+    textInput.value = '';
+    weekInput.value = '';
+    await loadProgressHistory(ideaId);
+    toast('Progress logged');
+  } catch (err) {
+    toast('Error logging progress: ' + err.message);
+  } finally {
+    textInput.disabled = false;
+  }
+}
+
+async function requestReplan() {
+  const ideaId = currentBlueprintIdeaId;
+  const btn = document.getElementById('replan-btn');
+  if (!ideaId) return;
+  if (btn) { btn.disabled = true; btn.textContent = 'Replanning…'; }
+  try {
+    const bp = await apiFetch(`/ideas/${ideaId}/replan`, { method: 'POST' });
+    toast('Timeline and risks updated');
+    renderBlueprint(bp);
+  } catch (err) {
+    toast('Replan failed: ' + err.message);
+    if (btn) { btn.disabled = false; btn.textContent = 'Request replan →'; }
+  }
+}
+
+/* ---------------- Mentor chat (Milestone 3) ---------------- */
+let currentBlueprintIdeaId = null;
+
+function chatMsgHTML(role, content, pending) {
+  const cls = role === 'student' ? 'student' : 'mentor';
+  return `<div class="chat-msg ${cls}${pending ? ' pending' : ''}">${escapeHTML(content)}</div>`;
+}
+
+async function loadChatHistory(ideaId) {
+  const box = document.getElementById('chat-messages');
+  if (!box) return; // modal closed / re-rendered before this resolved
+  try {
+    const history = await apiFetch(`/ideas/${ideaId}/chat`);
+    if (!document.getElementById('chat-messages') || currentBlueprintIdeaId !== ideaId) return;
+    box.innerHTML = history.length
+      ? history.map(m => chatMsgHTML(m.role, m.content)).join('')
+      : '<div class="chat-empty">No messages yet — ask your mentor anything about this blueprint.</div>';
+    box.scrollTop = box.scrollHeight;
+  } catch (err) {
+    box.innerHTML = `<div class="chat-empty">Couldn't load conversation: ${escapeHTML(err.message)}</div>`;
+  }
+}
+
+async function sendChatMessage() {
+  const ideaId = currentBlueprintIdeaId;
+  const input = document.getElementById('chat-input');
+  const box = document.getElementById('chat-messages');
+  if (!ideaId || !input || !box) return;
+  const text = input.value.trim();
+  if (!text) return;
+
+  input.value = '';
+  input.disabled = true;
+  if (box.querySelector('.chat-empty')) box.innerHTML = '';
+  box.insertAdjacentHTML('beforeend', chatMsgHTML('student', text));
+  box.insertAdjacentHTML('beforeend', '<div class="chat-msg mentor pending" id="chat-pending">…</div>');
+  box.scrollTop = box.scrollHeight;
+
+  try {
+    const reply = await apiFetch(`/ideas/${ideaId}/chat`, {
+      method: 'POST',
+      body: JSON.stringify({ content: text }),
+    });
+    const pending = document.getElementById('chat-pending');
+    if (pending) pending.outerHTML = chatMsgHTML('mentor', reply.content);
+  } catch (err) {
+    const pending = document.getElementById('chat-pending');
+    if (pending) pending.outerHTML = chatMsgHTML('mentor', 'Error: ' + err.message);
+  } finally {
+    input.disabled = false;
+    input.focus();
+    box.scrollTop = box.scrollHeight;
+  }
 }
 
 /* ---------------- Boot ---------------- */

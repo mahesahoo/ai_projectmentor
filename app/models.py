@@ -50,7 +50,8 @@ class ProjectIdea(Base):
     The `status` field defaults to "submitted" and is driven through the
     Milestone 2 pipeline stages defined in app/agents/status.py:
     submitted -> analyzing_feasibility -> analyzing_scope -> analyzing_tech
-    -> analyzing_timeline -> analyzed (or failed at any stage).
+    -> analyzing_timeline -> analyzing_risk -> analyzed (or failed at any
+    stage). The analyzing_risk stage was added in Milestone 3.
     """
     __tablename__ = "project_ideas"
 
@@ -73,6 +74,27 @@ class ProjectIdea(Base):
     )
     timeline_plans = relationship(
         "TimelinePlan", back_populates="idea", cascade="all, delete-orphan"
+    )
+    risk_assessments = relationship(
+        "RiskAssessment", back_populates="idea", cascade="all, delete-orphan"
+    )
+    mentor_messages = relationship(
+        "MentorMessage",
+        back_populates="idea",
+        cascade="all, delete-orphan",
+        order_by="MentorMessage.created_at",
+    )
+    progress_updates = relationship(
+        "ProgressUpdate",
+        back_populates="idea",
+        cascade="all, delete-orphan",
+        order_by="ProgressUpdate.created_at",
+    )
+    generated_documents = relationship(
+        "GeneratedDocument",
+        back_populates="idea",
+        cascade="all, delete-orphan",
+        order_by="GeneratedDocument.created_at.desc()",
     )
 
 
@@ -130,3 +152,75 @@ class TimelinePlan(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     idea = relationship("ProjectIdea", back_populates="timeline_plans")
+
+
+class RiskAssessment(Base):
+    """Milestone 3 - Risk Assessment and Mitigation Agent output.
+
+    Last stage of the blueprint pipeline: reads the full blueprint so far
+    (idea + scope + tech + timeline) and flags what's likely to go wrong.
+    """
+    __tablename__ = "risk_assessments"
+
+    assessment_id = Column(String, primary_key=True, default=gen_uuid)
+    idea_id = Column(String, ForeignKey("project_ideas.idea_id"), nullable=False)
+    risks = Column(JSON, nullable=False)  # list[{"risk", "likelihood", "mitigation"}]
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    idea = relationship("ProjectIdea", back_populates="risk_assessments")
+
+
+class MentorMessage(Base):
+    """Milestone 3 - Conversational Mentor module.
+
+    Flat message log, one row per turn - a single thread per idea (no
+    separate Conversation table needed at this scale). role is "student" or
+    "mentor"; the mentor's system prompt and reply are grounded in the
+    idea's finished blueprint (see app/agents/mentor.py), not persisted here.
+    """
+    __tablename__ = "mentor_messages"
+
+    message_id = Column(String, primary_key=True, default=gen_uuid)
+    idea_id = Column(String, ForeignKey("project_ideas.idea_id"), nullable=False)
+    role = Column(String, nullable=False)  # "student" | "mentor"
+    content = Column(String, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    idea = relationship("ProjectIdea", back_populates="mentor_messages")
+
+
+class ProgressUpdate(Base):
+    """Milestone 3 - Progress tracking.
+
+    A cheap, LLM-free log entry the student writes to record status ("week 2:
+    behind schedule on auth"). Logging is separate from replanning (see
+    POST /api/ideas/{id}/replan) so the student can log freely without
+    triggering an agent rerun every time.
+    """
+    __tablename__ = "progress_updates"
+
+    update_id = Column(String, primary_key=True, default=gen_uuid)
+    idea_id = Column(String, ForeignKey("project_ideas.idea_id"), nullable=False)
+    week_number = Column(Integer, nullable=True)
+    update_text = Column(String, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    idea = relationship("ProjectIdea", back_populates="progress_updates")
+
+
+class GeneratedDocument(Base):
+    """Milestone 3 - on-demand documentation generation.
+
+    Persisted per generation (not overwritten) so a student/faculty can look
+    at past versions instead of losing them on regenerate - same audit-trail
+    reasoning as every other agent table in this app.
+    """
+    __tablename__ = "generated_documents"
+
+    document_id = Column(String, primary_key=True, default=gen_uuid)
+    idea_id = Column(String, ForeignKey("project_ideas.idea_id"), nullable=False)
+    doc_type = Column(String, nullable=False)  # "synopsis" | "methodology" | "progress_report"
+    content = Column(String, nullable=False)  # Markdown
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    idea = relationship("ProjectIdea", back_populates="generated_documents")

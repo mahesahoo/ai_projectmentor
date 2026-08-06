@@ -156,6 +156,72 @@ class TimelinePlanOut(BaseModel):
         from_attributes = True
 
 
+class RiskItem(BaseModel):
+    risk: str
+    likelihood: Literal["low", "medium", "high"]
+    mitigation: str
+
+
+class RiskAgentOutput(BaseModel):
+    risks: List[RiskItem]
+
+
+class RiskAssessmentOut(BaseModel):
+    assessment_id: str
+    idea_id: str
+    risks: List[RiskItem]
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class MentorMessageIn(BaseModel):
+    content: str = Field(min_length=1)
+
+
+class MentorMessageOut(BaseModel):
+    message_id: str
+    idea_id: str
+    role: str
+    content: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class ProgressUpdateIn(BaseModel):
+    week_number: Optional[int] = None
+    update_text: str = Field(min_length=1)
+
+
+class ProgressUpdateOut(BaseModel):
+    update_id: str
+    idea_id: str
+    week_number: Optional[int] = None
+    update_text: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class DocumentGenerateIn(BaseModel):
+    doc_type: Literal["synopsis", "methodology", "progress_report"]
+
+
+class GeneratedDocumentOut(BaseModel):
+    document_id: str
+    idea_id: str
+    doc_type: str
+    content: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
 class BlueprintOut(BaseModel):
     """Aggregated view of an idea plus its latest agent outputs, for
     GET /api/ideas/{id}/blueprint. Any stage not yet run (or still in
@@ -166,6 +232,7 @@ class BlueprintOut(BaseModel):
     scope: Optional[ScopeDefinitionOut] = None
     tech: Optional[TechRecommendationOut] = None
     timeline: Optional[TimelinePlanOut] = None
+    risk: Optional[RiskAssessmentOut] = None
 
     class Config:
         from_attributes = True

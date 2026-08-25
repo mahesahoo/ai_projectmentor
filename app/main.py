@@ -31,6 +31,7 @@ from fastapi.responses import FileResponse
 @app.get("/profile.html", include_in_schema=False)
 @app.get("/skill_assessment.html", include_in_schema=False)
 @app.get("/submit_idea.html", include_in_schema=False)
+@app.get("/faculty.html", include_in_schema=False)
 def serve_spa():
     return FileResponse("frontend/index.html")
 

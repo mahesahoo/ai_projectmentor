@@ -248,6 +248,14 @@
   .doc-date { color: var(--muted); font-weight: 400; font-size: 11.5px; }
   .doc-content { display: none; margin: 0; padding: 12px; font-size: 12.5px; white-space: pre-wrap; font-family: ui-monospace, 'SF Mono', monospace; max-height: 320px; overflow-y: auto; color: var(--ink-soft); }
   .doc-content.show { display: block; }
+
+  /* ---------- Milestone 4: faculty dashboard ---------- */
+  .health-badge { display: inline-block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; padding: 3px 10px; border-radius: 20px; }
+  .health-on_track { background: var(--ok-tint); color: var(--ok); }
+  .health-at_risk { background: #fdf0e3; color: #b06a24; }
+  .health-stalled { background: #fdecea; color: var(--err); }
+  .health-not_feasible { background: var(--line-soft); color: var(--muted); }
+  .faculty-meta { font-size: 12.5px; color: var(--muted); margin-top: 4px; }
 </style>
 </head>
 <body>
@@ -327,6 +335,7 @@
         <button class="nav-item active" data-tab="profile" onclick="tab('profile')"><span class="nav-ico">◐</span> Profile</button>
         <button class="nav-item" data-tab="skills" onclick="tab('skills')"><span class="nav-ico">◑</span> Skill assessment</button>
         <button class="nav-item" data-tab="idea" onclick="tab('idea')"><span class="nav-ico">◒</span> Project idea</button>
+        <button class="nav-item" data-tab="faculty" id="nav-faculty" style="display:none" onclick="tab('faculty')"><span class="nav-ico">⊞</span> Faculty dashboard</button>
       </nav>
       <div class="side-user">
         <div class="nm" id="side-name">—</div>
@@ -416,6 +425,19 @@
           <div id="idea-list" style="margin-top:16px"></div>
         </div>
       </section>
+
+      <!-- Faculty dashboard tab (Milestone 4) -->
+      <section id="tab-faculty" style="display:none">
+        <div class="page-head">
+          <h2>Faculty dashboard</h2>
+          <p>Every student's project at a glance — health, progress, and an on-demand AI summary.</p>
+        </div>
+        <div class="card">
+          <h3>All projects</h3>
+          <p class="card-sub">Generating a summary is a deliberate action per project — it never runs automatically.</p>
+          <div id="faculty-list"><div class="empty">Loading…</div></div>
+        </div>
+      </section>
     </main>
   </div>
 </div>
@@ -433,6 +455,20 @@
       <button class="modal-close" onclick="closeBlueprint()">✕</button>
     </div>
     <div id="bp-body"></div>
+  </div>
+</div>
+
+<!-- ============ FACULTY DETAIL MODAL (Milestone 4 - read-only drill-down) ============ -->
+<div class="modal-backdrop" id="faculty-modal" onclick="if(event.target===this) closeFacultyDetail()">
+  <div class="modal">
+    <div class="modal-head">
+      <div>
+        <h3 id="faculty-title">—</h3>
+        <p class="card-sub" style="margin:0" id="faculty-status-line">—</p>
+      </div>
+      <button class="modal-close" onclick="closeFacultyDetail()">✕</button>
+    </div>
+    <div id="faculty-body"></div>
   </div>
 </div>
 
@@ -518,7 +554,7 @@ function show(v) {
 
 async function tab(t) {
   document.querySelectorAll('.nav-item').forEach(b => b.classList.toggle('active', b.dataset.tab === t));
-  ['profile', 'skills', 'idea'].forEach(x => document.getElementById('tab-' + x).style.display = x === t ? 'block' : 'none');
+  ['profile', 'skills', 'idea', 'faculty'].forEach(x => document.getElementById('tab-' + x).style.display = x === t ? 'block' : 'none');
   if (t !== 'idea') clearInterval(ideaPollInterval);
 
   // Update path dynamically
@@ -529,11 +565,14 @@ async function tab(t) {
     history.pushState(null, '', '/skill_assessment.html');
   } else if (t === 'idea' && path !== '/submit_idea.html') {
     history.pushState(null, '', '/submit_idea.html');
+  } else if (t === 'faculty' && path !== '/faculty.html') {
+    history.pushState(null, '', '/faculty.html');
   }
 
   if (t === 'skills') await renderSkills();
   if (t === 'idea') await renderIdeas();
   if (t === 'profile') await renderMeter();
+  if (t === 'faculty') await renderFacultyDashboard();
 }
 
 /* ---------------- Toast ---------------- */
@@ -602,18 +641,21 @@ function doLogout() {
 async function enterApp() {
   side_name.textContent = currentUser.name;
   side_email.textContent = currentUser.email;
-  p_name.value = currentUser.name; 
+  p_name.value = currentUser.name;
   p_email.value = currentUser.email;
-  p_branch.value = currentUser.branch || ''; 
+  p_branch.value = currentUser.branch || '';
   p_year.value = currentUser.year || '';
-  
+  document.getElementById('nav-faculty').style.display = currentUser.is_faculty ? '' : 'none';
+
   show('app');
-  
+
   const path = window.location.pathname;
   if (path === '/skill_assessment.html') {
     await tab('skills');
   } else if (path === '/submit_idea.html') {
     await tab('idea');
+  } else if (path === '/faculty.html' && currentUser.is_faculty) {
+    await tab('faculty');
   } else {
     await tab('profile');
   }
@@ -809,26 +851,13 @@ async function loadBlueprint(ideaId) {
   renderBlueprint(bp);
 }
 
-function renderBlueprint(bp) {
-  document.getElementById('bp-title').textContent = bp.idea.title;
+/* Feasibility/Scope/Tech/Timeline/Risk markup - shared between the
+   student's own blueprint modal and the faculty read-only detail view
+   (Milestone 4), so the two never drift out of sync with each other. */
+function blueprintCoreHTML(bp) {
   const status = bp.idea.status;
-  document.getElementById('bp-status-line').textContent =
-    status === 'analyzed' ? 'Analysis complete' :
-    status === 'failed' ? 'Analysis failed' :
-    'Analyzing… (' + status.replace('analyzing_', '').replace('_', ' ') + ')';
-
-  if (TERMINAL_STATUSES.has(status)) clearInterval(bpPollInterval);
-
-  if (status === 'failed') {
-    document.getElementById('bp-body').innerHTML =
-      '<div class="bp-empty">The agent pipeline hit an error on this idea. Check the server logs, or resubmit.</div>';
-    return;
-  }
-
   if (!bp.feasibility) {
-    document.getElementById('bp-body').innerHTML =
-      '<div class="bp-loading">Still working — the Feasibility agent is running now…</div>';
-    return;
+    return '<div class="bp-loading">Still working — the Feasibility agent is running now…</div>';
   }
 
   let html = `
@@ -879,6 +908,27 @@ function renderBlueprint(bp) {
   } else if (status !== 'analyzed') {
     html += '<div class="bp-loading">Risk agent running next…</div>';
   }
+
+  return html;
+}
+
+function renderBlueprint(bp) {
+  document.getElementById('bp-title').textContent = bp.idea.title;
+  const status = bp.idea.status;
+  document.getElementById('bp-status-line').textContent =
+    status === 'analyzed' ? 'Analysis complete' :
+    status === 'failed' ? 'Analysis failed' :
+    'Analyzing… (' + status.replace('analyzing_', '').replace('_', ' ') + ')';
+
+  if (TERMINAL_STATUSES.has(status)) clearInterval(bpPollInterval);
+
+  if (status === 'failed') {
+    document.getElementById('bp-body').innerHTML =
+      '<div class="bp-empty">The agent pipeline hit an error on this idea. Check the server logs, or resubmit.</div>';
+    return;
+  }
+
+  let html = blueprintCoreHTML(bp);
 
   if (status === 'analyzed' && bp.timeline) {
     html += `
@@ -1089,6 +1139,136 @@ async function sendChatMessage() {
     input.disabled = false;
     input.focus();
     box.scrollTop = box.scrollHeight;
+  }
+}
+
+/* ---------------- Faculty dashboard (Milestone 4) ---------------- */
+const HEALTH_LABEL = { on_track: 'On track', at_risk: 'At risk', stalled: 'Stalled', not_feasible: 'Not feasible' };
+let currentFacultyIdeaId = null;
+
+function healthBadgeHTML(status) {
+  if (!status) return '<span class="chat-empty" style="padding:0;display:inline-block">No summary yet</span>';
+  return `<span class="health-badge health-${status}">${escapeHTML(HEALTH_LABEL[status] || status)}</span>`;
+}
+
+async function renderFacultyDashboard() {
+  const box = document.getElementById('faculty-list');
+  if (!box) return;
+  let rows = [];
+  try {
+    rows = await apiFetch('/faculty/dashboard');
+  } catch (err) {
+    box.innerHTML = `<div class="empty">Couldn't load dashboard: ${escapeHTML(err.message)}</div>`;
+    return;
+  }
+  if (!rows.length) {
+    box.innerHTML = '<div class="empty"><div class="big">◇</div>No student ideas submitted yet.</div>';
+    return;
+  }
+  box.innerHTML = rows.map(r => `
+    <div class="skill-item">
+      <div class="skill-top">
+        <span class="skill-name">${escapeHTML(r.idea.title)}</span>
+        <span class="status-pill ${statusPillClass(r.idea.status)}">● ${escapeHTML(r.idea.status)}</span>
+      </div>
+      <p style="font-size:13px;color:var(--muted)">${escapeHTML(r.student_name)} · ${escapeHTML(r.student_email)}</p>
+      <p class="faculty-meta">
+        Weeks ${r.weeks_completed}/${r.weeks_total === null ? '—' : r.weeks_total} ·
+        ${r.high_risk_count} high-risk risk${r.high_risk_count === 1 ? '' : 's'} ·
+        ${r.replan_count} replan${r.replan_count === 1 ? '' : 's'} ·
+        ${r.chat_message_count} chat msg${r.chat_message_count === 1 ? '' : 's'}${
+          r.days_since_last_progress !== null ? ` · updated ${r.days_since_last_progress}d ago` : ''
+        }
+      </p>
+      <div style="margin-top:8px">${healthBadgeHTML(r.latest_summary ? r.latest_summary.health_status : null)}</div>
+      <div class="idea-actions">
+        <button class="btn ghost sm" onclick="openFacultyDetail('${r.idea.idea_id}')">View details →</button>
+        <button class="btn ghost sm" onclick="generateFacultySummary('${r.idea.idea_id}', this)">Generate summary</button>
+      </div>
+    </div>`).join('');
+}
+
+async function openFacultyDetail(ideaId) {
+  currentFacultyIdeaId = ideaId;
+  document.getElementById('faculty-modal').classList.add('show');
+  document.getElementById('faculty-title').textContent = 'Loading…';
+  document.getElementById('faculty-status-line').textContent = '';
+  document.getElementById('faculty-body').innerHTML = '<div class="bp-loading">Loading…</div>';
+  await loadFacultyDetail(ideaId);
+}
+
+function closeFacultyDetail() {
+  document.getElementById('faculty-modal').classList.remove('show');
+  currentFacultyIdeaId = null;
+}
+
+async function loadFacultyDetail(ideaId) {
+  let detail;
+  try {
+    detail = await apiFetch(`/faculty/ideas/${ideaId}`);
+  } catch (err) {
+    document.getElementById('faculty-body').innerHTML =
+      `<div class="bp-empty">Error loading: ${escapeHTML(err.message)}</div>`;
+    return;
+  }
+  if (currentFacultyIdeaId !== ideaId) return; // modal closed/switched before this resolved
+  renderFacultyDetail(detail);
+}
+
+function renderFacultyDetail(detail) {
+  document.getElementById('faculty-title').textContent = detail.idea.title;
+  document.getElementById('faculty-status-line').textContent =
+    `${detail.student_name} · ${detail.student_email} · ${detail.idea.status}`;
+
+  if (detail.idea.status === 'failed') {
+    document.getElementById('faculty-body').innerHTML =
+      '<div class="bp-empty">The agent pipeline hit an error on this idea (missing API key, or an upstream failure) - there is no blueprint to show.</div>';
+    return;
+  }
+
+  let html = blueprintCoreHTML(detail);
+
+  html += `
+    <div class="bp-section">
+      <h4>Progress log</h4>
+      <div class="progress-list">${
+        detail.progress_updates.length
+          ? detail.progress_updates.map(p => `<div class="progress-item">${p.week_number ? `<span class="pweek">Week ${p.week_number}</span>` : ''}${escapeHTML(p.update_text)}</div>`).join('')
+          : '<div class="chat-empty">No progress logged yet.</div>'
+      }</div>
+    </div>
+    <div class="bp-section">
+      <h4>Mentor conversation</h4>
+      <div class="chat-messages" style="max-height:200px">${
+        detail.chat_messages.length
+          ? detail.chat_messages.map(m => chatMsgHTML(m.role, m.content)).join('')
+          : '<div class="chat-empty">No conversation yet.</div>'
+      }</div>
+    </div>
+    <div class="bp-section">
+      <h4>Faculty summary</h4>
+      <div id="faculty-summary-box">${
+        detail.latest_summary
+          ? `${healthBadgeHTML(detail.latest_summary.health_status)}<p style="font-size:13.5px;color:var(--ink-soft);margin-top:8px">${escapeHTML(detail.latest_summary.summary)}</p>`
+          : '<div class="chat-empty">No summary generated yet.</div>'
+      }</div>
+      <button class="btn ghost sm" id="faculty-summary-btn" style="margin-top:10px" onclick="generateFacultySummary('${detail.idea.idea_id}', this)">Generate summary</button>
+    </div>`;
+
+  document.getElementById('faculty-body').innerHTML = html;
+}
+
+async function generateFacultySummary(ideaId, btn) {
+  if (btn) { btn.disabled = true; btn.textContent = 'Generating…'; }
+  try {
+    await apiFetch(`/faculty/ideas/${ideaId}/summary`, { method: 'POST' });
+    toast('Summary generated');
+    await renderFacultyDashboard();
+    if (currentFacultyIdeaId === ideaId) await loadFacultyDetail(ideaId);
+  } catch (err) {
+    toast('Error generating summary: ' + err.message);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Generate summary'; }
   }
 }
 

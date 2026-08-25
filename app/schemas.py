@@ -23,6 +23,7 @@ class StudentOut(BaseModel):
     email: str
     branch: Optional[str] = None
     year: Optional[int] = None
+    is_faculty: bool = False
     created_at: datetime
 
     class Config:

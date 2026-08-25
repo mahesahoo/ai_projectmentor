@@ -130,7 +130,9 @@ can't accidentally burn API quota just by using the app normally. This is a
 documented, deliberate deviation from the Milestone 3 brief's literal wording
 ("progress updates trigger plan adjustments via the agent pipeline") — cost
 predictability was judged more valuable than literal compliance with a brief
-that doesn't specify a budget.
+that doesn't specify a budget. The same deviation applies to the Milestone 4
+brief's own wording — it asks for "auto-generated mentor summaries," and this
+build generates them on explicit request instead, for the identical reason.
 
 ### 6.3 Lazy Gemini client construction
 

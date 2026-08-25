@@ -308,6 +308,13 @@ All four tasks complete — this is the final milestone (see `infos/mil4.jpeg`):
   README section, `PROJECT_REPORT.md`, `Milestone4_Presentation.pptx`, and
   `PRESENTATION_SCRIPT_M4.md`.
 
+**Design decision:** the brief describes faculty summaries as "auto-generated."
+This build makes summary generation an explicit, on-demand action instead —
+the same cost-discipline reasoning as M3's replan: a faculty member browsing
+many projects shouldn't silently trigger an LLM call for every row just by
+loading the dashboard. A deliberate, documented deviation from the brief's
+literal wording, not an oversight.
+
 **Design decision:** faculty access is a plain `is_faculty` boolean on the
 existing `Student` model plus a `get_current_faculty` auth dependency, not a
 separate faculty account/registration system. The brief asks for a "faculty

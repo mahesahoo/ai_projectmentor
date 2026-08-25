@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.database import engine, Base
-from app.routers import auth, profile, ideas
+from app.routers import auth, profile, ideas, faculty
 
 # Creates tables on startup if they don't exist yet (fine for Milestone 1;
 # swap to Alembic migrations once the schema stabilizes in later milestones).
@@ -22,6 +22,7 @@ app.add_middleware(
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 app.include_router(profile.router, prefix="/api/profile", tags=["profile"])
 app.include_router(ideas.router, prefix="/api/ideas", tags=["ideas"])
+app.include_router(faculty.router, prefix="/api/faculty", tags=["faculty"])
 
 from fastapi.responses import FileResponse
 

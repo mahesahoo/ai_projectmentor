@@ -54,3 +54,20 @@ def get_current_student(
     if student is None:
         raise credentials_exception
     return student
+
+
+def get_current_faculty(
+    current_student: Student = Depends(get_current_student),
+) -> Student:
+    """Milestone 4 - faculty dashboard access. Reuses get_current_student as
+    a sub-dependency (same token, same table) rather than a separate login
+    flow: there's no distinct faculty account type, just an is_faculty flag
+    on the existing Student row (see MILESTONE4_CHECKLIST.md's "Faculty
+    access" decision - a new user type would be scope creep for what the
+    brief actually asks for)."""
+    if not current_student.is_faculty:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Faculty access required.",
+        )
+    return current_student

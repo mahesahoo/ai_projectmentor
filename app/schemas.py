@@ -222,6 +222,43 @@ class GeneratedDocumentOut(BaseModel):
         from_attributes = True
 
 
+class ProjectSummaryAgentOutput(BaseModel):
+    summary: str
+    health_status: Literal["on_track", "at_risk", "stalled", "not_feasible"]
+
+
+class ProjectSummaryOut(BaseModel):
+    summary_id: str
+    idea_id: str
+    summary: str
+    health_status: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class DashboardProjectOut(BaseModel):
+    """One row of GET /api/faculty/dashboard - an idea plus computed health
+    indicators (no LLM call) and its latest ProjectSummary if one has been
+    generated (also no LLM call - dashboard reads never trigger generation,
+    see POST /api/faculty/ideas/{id}/summary for the explicit trigger).
+    Built manually in the router, not a direct ORM mapping - it aggregates
+    across the idea, its owning student, and several other tables."""
+
+    idea: ProjectIdeaOut
+    student_name: str
+    student_email: str
+    verdict: Optional[str] = None
+    weeks_completed: int
+    weeks_total: Optional[int] = None
+    high_risk_count: int
+    replan_count: int
+    days_since_last_progress: Optional[int] = None
+    chat_message_count: int
+    latest_summary: Optional[ProjectSummaryOut] = None
+
+
 class BlueprintOut(BaseModel):
     """Aggregated view of an idea plus its latest agent outputs, for
     GET /api/ideas/{id}/blueprint. Any stage not yet run (or still in
@@ -236,3 +273,16 @@ class BlueprintOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class FacultyIdeaDetailOut(BlueprintOut):
+    """GET /api/faculty/ideas/{id} - the single-idea drill-down from the
+    dashboard. Extends BlueprintOut (same blueprint fields a student sees)
+    with the student's identity plus the progress/chat/summary history
+    that's specific to the faculty view."""
+
+    student_name: str
+    student_email: str
+    progress_updates: List[ProgressUpdateOut] = []
+    chat_messages: List[MentorMessageOut] = []
+    latest_summary: Optional[ProjectSummaryOut] = None

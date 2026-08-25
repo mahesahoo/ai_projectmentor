@@ -76,6 +76,11 @@ def _call_agent(fn, *args, **kwargs):
     except HTTPException:
         raise
     except Exception as exc:
+        # Without this, the server log shows only a bare 503 - no way to
+        # tell a transient rate limit apart from a real bug in the agent
+        # call without re-running it by hand (found the hard way while
+        # verifying the Milestone 4 faculty summary endpoint).
+        print(f"[_call_agent] {fn.__name__} failed: {type(exc).__name__}: {exc}")
         raise HTTPException(
             status_code=503,
             detail="The AI mentor is temporarily unavailable (upstream API "

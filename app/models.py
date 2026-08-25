@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Column, String, Integer, ForeignKey, DateTime, JSON
+from sqlalchemy import Column, String, Integer, Boolean, ForeignKey, DateTime, JSON
 from sqlalchemy.orm import relationship
 
 from app.database import Base
@@ -21,6 +21,7 @@ class Student(Base):
     password_hash = Column(String, nullable=False)
     branch = Column(String, nullable=True)
     year = Column(Integer, nullable=True)
+    is_faculty = Column(Boolean, nullable=False, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     skill_assessments = relationship(
@@ -95,6 +96,12 @@ class ProjectIdea(Base):
         back_populates="idea",
         cascade="all, delete-orphan",
         order_by="GeneratedDocument.created_at.desc()",
+    )
+    project_summaries = relationship(
+        "ProjectSummary",
+        back_populates="idea",
+        cascade="all, delete-orphan",
+        order_by="ProjectSummary.created_at.desc()",
     )
 
 
@@ -224,3 +231,24 @@ class GeneratedDocument(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     idea = relationship("ProjectIdea", back_populates="generated_documents")
+
+
+class ProjectSummary(Base):
+    """Milestone 4 - Faculty Summary Agent output.
+
+    Synthesizes the full blueprint + progress/chat/replan history into a
+    short faculty-readable summary plus a machine-usable health tag, so the
+    faculty dashboard can sort/filter without a human reading every project.
+    Generated on-demand (POST /api/faculty/ideas/{id}/summary), never
+    automatically - same audit-trail pattern as every other agent table:
+    a new row per generation, latest() picks the newest for display.
+    """
+    __tablename__ = "project_summaries"
+
+    summary_id = Column(String, primary_key=True, default=gen_uuid)
+    idea_id = Column(String, ForeignKey("project_ideas.idea_id"), nullable=False)
+    summary = Column(String, nullable=False)
+    health_status = Column(String, nullable=False)  # "on_track" | "at_risk" | "stalled" | "not_feasible"
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    idea = relationship("ProjectIdea", back_populates="project_summaries")

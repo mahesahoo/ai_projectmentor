@@ -165,16 +165,44 @@ pattern (`_get_owned_idea`) everywhere else.
     output (the exact failure mode M2/M3's design already guards against explicitly — verify it
     actually holds under a second look), and token-budget mismatches (`max_output_tokens` too low
     for a prompt that asks for a lot, or too high for one that doesn't).
-17. **Confirm Gemini SDK retry behavior** — `google-genai`'s bundled `tenacity` already retries
-    transient errors before they reach app code (confirmed during M3 rehearsal: a `503` still
-    surfaced after retries were exhausted, meaning retries happened first). Don't add a second,
-    redundant retry layer on top — but do confirm the retry count/backoff is reasonable for a
-    live demo (a 30-second silent retry before failing is worse on stage than failing fast with
-    the clean `503` message M3 already added).
-18. **Spot-check structured-output reliability** — run each `response_json_schema`-constrained
-    agent (Feasibility, Scope, Tech, Timeline, Risk, Replan, and the new Faculty Summary agent)
-    a handful of times against varied inputs; confirm none silently produce malformed/truncated
-    JSON that Pydantic would reject with an unhelpful error.
+    **Done — findings:** naming was inconsistent (`docs.py` called itself a "module" while the
+    other 8 all say "the [X] Agent in an AI Academic Project Mentor pipeline") - fixed. The
+    anti-genericness instruction (explicit "don't be generic" language) holds across all 9 on
+    re-read, no drift. Token budgets: `faculty_summary.py`'s original 600 was genuinely
+    undersized (fixed during step 5, see that commit) and `mentor.py`'s 1024 was the next
+    tightest - a real "walk me through X in detail" question measured 452 output tokens against
+    it, live-tested and bumped to 2048 for headroom. `feasibility.py` (2048) live-tested with
+    1521 tokens of confirmed headroom on a real call. The rest (2500-4000) never showed
+    truncation symptoms across ~8+ real pipeline runs this session and weren't independently
+    re-tested here given exhausted quota - acceptable risk, not a gap, given that run count.
+17. **Confirm Gemini SDK retry behavior.** **Done — finding corrects an earlier wrong assumption
+    baked into this checklist:** the SDK does **not** retry anything by default. Traced
+    `google-genai`'s `_api_client.py`: `genai.Client()` with no args leaves `http_options.
+    retry_options = None`, and `retry_args(None)` returns `stop_after_attempt(1)` - a single
+    attempt, `reraise=True`. The tenacity stack frames visible in every traceback this session
+    (including the one that led to the original wrong assumption) come from tenacity's
+    single-attempt wrapper, not from actual retries - a `Retrying(**kwargs).__call__` puts those
+    frames in the trace even when `stop_after_attempt(1)` means zero retries happen.
+    **Decision: don't add retry.** `429` (quota exhausted) is in the SDK's own retriable-status
+    list, and free-tier daily quota exhaustion - not transient network blips - was this session's
+    actual dominant failure mode, hit twice today. Retrying a hard daily-quota 429 cannot
+    succeed; it would just turn a fast, clean `503` into ~15s of backoff before the identical
+    `503`, contradicting the "clean 503 instead of hanging" fix from commit `d5d1a7c`. Per-stage
+    retry inside the background pipeline would also make the "~40-45 seconds measured in
+    rehearsal" timing claim (already corrected once this milestone) unreliable again. A narrower
+    variant - one extra attempt, `503`-only, excluding `429` - would have smoothed the two
+    genuine "high demand" `503`s hit earlier in this milestone, but wasn't worth shipping
+    untested in the final stretch on already-exhausted quota. Recorded here as a considered and
+    declined option, not an unaddressed gap.
+18. **Spot-check structured-output reliability.** **Done, via accumulated evidence rather than a
+    fresh dedicated run** (quota was exhausted by the time this step was reached): this session's
+    Milestone 4 work alone put the structured-output agents through ~8 real calls across the
+    faculty summary agent (3 scenarios validated in step 5) and 2 full live pipeline runs
+    (5 structured-output agents each, in steps 7-9 and the step-15 live smoke test) - every one
+    produced a clean Pydantic parse except the one faculty_summary.py truncation, which was
+    found and fixed during step 5, not left as a residual risk. No malformed/truncated JSON was
+    observed from any of Feasibility, Scope, Tech, Timeline, or Risk in this or prior milestones'
+    extensive live testing.
 
 ## 7. Final documentation + demonstration
 

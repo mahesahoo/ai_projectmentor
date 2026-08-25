@@ -5,8 +5,8 @@ from google.genai import types
 from app.agents.client import get_client, MODEL
 from app.schemas import RiskItem, TechStackItem, WeekPlan
 
-BASE_TEMPLATE = """You are the Documentation Generation module of an AI Academic Project \
-Mentor. You are given a student's finished project blueprint (and progress log, if any). \
+BASE_TEMPLATE = """You are the Documentation Generation Agent in an AI Academic Project \
+Mentor pipeline. You are given a student's finished project blueprint (and progress log, if any). \
 Generate ONE document: {doc_label}. Output raw Markdown only - no commentary before or after \
 it, no "Here is your document:" preamble.
 

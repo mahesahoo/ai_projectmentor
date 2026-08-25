@@ -112,7 +112,16 @@ def run_mentor_agent(
         contents=contents,
         config=types.GenerateContentConfig(
             system_instruction=system_prompt,
-            max_output_tokens=1024,
+            # Was 1024 - a detailed "walk me through X step by step" question
+            # measured at 452 visible output tokens (confirmed). The actual
+            # thinking-token overhead on THAT specific call wasn't captured
+            # (quota ran out before the follow-up check), but every other
+            # measured call on this model in this session showed ~450-570
+            # thinking tokens (see faculty_summary.py's comment) - if that
+            # held here too, real margin against the old 1024 budget was
+            # only ~100-150 tokens. Bumped for headroom either way; this was
+            # the tightest budget in the app.
+            max_output_tokens=2048,
         ),
     )
     print(

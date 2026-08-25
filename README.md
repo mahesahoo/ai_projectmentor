@@ -16,6 +16,8 @@ is the finished project.
 ## Setup
 
 ```bash
+git clone https://github.com/priyadarsinimanisha/ai_projectmentor.git
+cd ai_projectmentor
 python3 -m venv venv
 source venv/bin/activate        # Windows: venv\Scripts\activate
 pip install -r requirements.txt

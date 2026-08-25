@@ -278,8 +278,9 @@ entirely in the browser — no Swagger this time.
    - **Title:** `Campus Lost & Found Tracker`
    - **Description:** `A web app where students can post items they lost or found on campus, search by category/location, and get notified on matches. Includes a simple admin view for the campus office to mark items as claimed.`
 3. Submit. Switch to the server terminal. As the print lines appear
-   (`[feasibility]`, `[scope]`, `[tech]`, `[timeline]`, `[risk]` — each
-   ~15-25 seconds), narrate: "Five agents now, not four — you can see `risk`
+   (`[feasibility]`, `[scope]`, `[tech]`, `[timeline]`, `[risk]` — the whole
+   chain finishes in well under a minute, ~40-45 seconds measured in
+   rehearsal), narrate: "Five agents now, not four — you can see `risk`
    running last, after timeline."
 4. Back on `localhost:8000`, the idea's status pill updates live (it polls
    automatically) until it reads `analyzed`.
@@ -434,12 +435,15 @@ slides while talking.
   troubleshoot on stage. Say "let's look at a run from earlier" and reopen
   the rehearsal idea's blueprint modal instead — it's already sitting in
   the database from §0, chat/progress/documents included.
-- **Forgot to export `GEMINI_API_KEY` before starting the server:** the app
-  still boots fine. The idea will land on `status: failed` for new
-  submissions, and existing chat/replan/document requests will return an
-  error response instead of hanging. This is fine to show and explain —
-  it's the same lazy-init and error-handling design from Milestone 2 —
-  then restart the server with the key set.
+- **Forgot to export `GEMINI_API_KEY` before starting the server, or Gemini
+  itself hiccups (e.g. a transient `503`):** the app still boots fine. The
+  idea will land on `status: failed` for new submissions, and chat/replan/
+  document requests return a clean `503` with a friendly message ("The AI
+  mentor is temporarily unavailable...") instead of hanging or throwing a
+  bare `500`. This is fine to show and explain — it's the same lazy-init
+  and error-handling design from Milestone 2, now extended to the
+  synchronous M3 endpoints too — then restart the server with the key set
+  (or just retry, if it was transient).
 - **Replan or chat returns a 409 unexpectedly:** check the idea's status
   pill first — both are gated on `analyzed`. If it's still
   `analyzing_something`, the pipeline just hasn't finished yet; wait for it.

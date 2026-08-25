@@ -62,6 +62,27 @@ def _get_owned_idea(idea_id: str, db: Session, current_student: Student) -> Proj
     return idea
 
 
+def _call_agent(fn, *args, **kwargs):
+    """Runs a synchronous agent call and turns any Gemini/upstream failure
+    (rate limit, transient 503, missing key, etc.) into a clean 503 with a
+    JSON body, instead of letting it bubble up as a bare 500 Internal Server
+    Error. The background pipeline already has its own failure handling
+    (sets idea.status = "failed"); these synchronous endpoints (chat, replan,
+    documents) have no such status field to fall back on, so they need to
+    fail cleanly right here instead.
+    """
+    try:
+        return fn(*args, **kwargs)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(
+            status_code=503,
+            detail="The AI mentor is temporarily unavailable (upstream API "
+            "error). Please try again in a moment.",
+        ) from exc
+
+
 def trigger_agent_pipeline(idea_id: str):
     """BackgroundTasks entry point for the Milestone 2 agent pipeline.
 
@@ -183,7 +204,8 @@ def send_chat_message(
     db.commit()
 
     history = [(m.role, m.content) for m in idea.mentor_messages[:-1]]
-    reply_text = run_mentor_agent(
+    reply_text = _call_agent(
+        run_mentor_agent,
         idea.title,
         idea.description,
         feasibility.verdict if feasibility else "unknown",
@@ -274,14 +296,16 @@ def replan_idea(
     original_weeks = [WeekPlan(**w) for w in timeline.weeks]
     progress_notes = _progress_notes(idea)
 
-    new_timeline = run_replan_agent(
+    new_timeline = _call_agent(
+        run_replan_agent,
         idea.title, idea.description, scope.objectives, scope.deliverables,
         stack, original_weeks, progress_notes,
     )
     db.add(TimelinePlan(idea_id=idea.idea_id, weeks=[w.model_dump() for w in new_timeline.weeks]))
     db.commit()
 
-    new_risk = run_risk_agent(
+    new_risk = _call_agent(
+        run_risk_agent,
         idea.title, idea.description, scope.objectives, scope.deliverables,
         stack, new_timeline.weeks, progress_notes,
     )
@@ -333,7 +357,8 @@ def generate_document(
     timeline = _latest(idea.timeline_plans)
     risk = _latest(idea.risk_assessments)
 
-    content = run_docs_agent(
+    content = _call_agent(
+        run_docs_agent,
         payload.doc_type,
         idea.title,
         idea.description,

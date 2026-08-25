@@ -55,8 +55,17 @@ failure.
 ## Run
 
 ```bash
-uvicorn app.main:app --reload
+uvicorn app.main:app
 ```
+
+⚠️ **Don't add `--reload`** unless you're actively editing code. `venv/`
+lives inside this project folder (per the Setup steps above), and
+`--reload`'s file-watcher recursively watches the whole folder by default —
+including everything inside `venv/`. Right after a fresh `pip install`,
+that's hundreds of newly-written files, which can trigger a reload storm
+(repeated "Reloading..." cycles, one per file) that's especially unstable on
+Windows. Plain `uvicorn app.main:app` boots once and stays up - the right
+choice for actually running/demoing the app, not developing it.
 
 Open **http://localhost:8000** — this serves both the frontend pages and the API
 from the same process (no CORS issues, no separate frontend server).
@@ -78,7 +87,7 @@ No code changes needed. Just set an environment variable before running:
 ```bash
 export DATABASE_URL="postgresql://user:password@localhost:5432/project_mentor"
 pip install psycopg2-binary   # Postgres driver, not needed for SQLite
-uvicorn app.main:app --reload
+uvicorn app.main:app
 ```
 
 ## API endpoints

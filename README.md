@@ -7,6 +7,13 @@ documentation, with a faculty dashboard giving mentors a health-at-a-glance view
 across every student. Milestones 1–4 complete (see status sections below) — this
 is the finished project.
 
+## Contributors
+
+| Name | GitHub |
+|---|---|
+| Priyadarsini Manisha | [@priyadarsinimanisha](https://github.com/priyadarsinimanisha) |
+| Maheswar Sahoo | [@mahesahoo](https://github.com/mahesahoo) |
+
 ## Stack
 - **Backend:** FastAPI (Python)
 - **Frontend:** plain HTML/CSS/vanilla JS (no build step)
